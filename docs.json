@@ -12,20 +12,6 @@
     "dark": "/images/logo.png"
   },
   "navigation": {
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    },
     "languages": [
       {
         "language": "zh-CN",
@@ -47,10 +33,11 @@
             "pages": []
           },
           {
-            "group": "插件开发",
+            "group": "深入插件",
             "pages": []
           }
-        ]
+        ],
+        "default": true
       },
       {
         "language": "en",
