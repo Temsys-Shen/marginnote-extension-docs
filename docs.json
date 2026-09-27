@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Marginnote Template Docs",
+  "name": "Marginnote Dev Docs",
   "colors": {
     "primary": "#2463EB",
     "light": "#2FAFFA",
@@ -54,12 +54,6 @@
     ]
   },
   "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
@@ -77,12 +71,6 @@
       "cursor",
       "vscode"
     ]
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/mintlify",
-      "website": "https://www.marginnote.com.cn"
-    }
   },
   "description": "Marginnote 场景模板教程文档",
   "icons": {
