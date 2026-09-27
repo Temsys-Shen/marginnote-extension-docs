@@ -12,20 +12,6 @@
     "dark": "/images/logo.png"
   },
   "navigation": {
-    "pages": [
-      {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
-        ]
-      },
-      {
-        "group": "开始",
-        "icon": "flag-pennant",
-        "pages": []
-      }
-    ],
     "global": {
       "anchors": [
         {
@@ -39,7 +25,46 @@
           "icon": "newspaper"
         }
       ]
-    }
+    },
+    "languages": [
+      {
+        "language": "zh-CN",
+        "pages": [
+          {
+            "group": "开始",
+            "icon": "flag-pennant",
+            "pages": [
+              "untitled-page",
+              "untitled-page-2"
+            ]
+          },
+          {
+            "group": "基础",
+            "pages": []
+          },
+          {
+            "group": "模板配置",
+            "pages": []
+          },
+          {
+            "group": "插件开发",
+            "pages": []
+          }
+        ]
+      },
+      {
+        "language": "en",
+        "pages": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "index",
+              "quickstart"
+            ]
+          }
+        ]
+      }
+    ]
   },
   "navbar": {
     "links": [
