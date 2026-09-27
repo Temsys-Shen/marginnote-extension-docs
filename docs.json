@@ -8,8 +8,8 @@
     "dark": "#003EB3"
   },
   "favicon": {
-    "light": "/images/logo.png",
-    "dark": "/images/logo.png"
+    "light": "/images/branding/favicon.png",
+    "dark": "/images/branding/favicon.png"
   },
   "navigation": {
     "languages": [
@@ -90,5 +90,9 @@
   },
   "seo": {
     "indexing": "all"
+  },
+  "logo": {
+    "light": "/images/branding/marginnote-logo-light.svg",
+    "dark": "/images/branding/marginnote-logo-dark.svg"
   }
 }
