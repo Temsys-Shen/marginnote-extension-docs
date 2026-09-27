@@ -19,6 +19,11 @@
           "index",
           "quickstart"
         ]
+      },
+      {
+        "group": "开始",
+        "icon": "flag-pennant",
+        "pages": []
       }
     ],
     "global": {
@@ -70,5 +75,8 @@
   "description": "Marginnote 场景模板教程文档",
   "icons": {
     "library": "fontawesome"
+  },
+  "seo": {
+    "indexing": "all"
   }
 }
