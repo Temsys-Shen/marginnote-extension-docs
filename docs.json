@@ -20,6 +20,7 @@
             "group": "开始",
             "icon": "flag-pennant",
             "pages": [
+              "untitled-page",
               "untitled-page-2"
             ]
           },
@@ -35,7 +36,8 @@
             "group": "深入插件",
             "pages": []
           }
-        ]
+        ],
+        "default": true
       },
       {
         "language": "en",
