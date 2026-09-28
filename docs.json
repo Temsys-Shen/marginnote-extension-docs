@@ -21,12 +21,15 @@
             "icon": "flag-pennant",
             "pages": [
               "untitled-page",
-              "untitled-page-2"
+              "ai"
             ]
           },
           {
             "group": "基础",
-            "pages": []
+            "pages": [
+              "ji",
+              "untitled-page-2"
+            ]
           },
           {
             "group": "模板配置",
@@ -56,8 +59,8 @@
   "navbar": {
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "label": "Forum",
+      "href": "https://bbs.marginnote.com.cn"
     }
   },
   "contextual": {

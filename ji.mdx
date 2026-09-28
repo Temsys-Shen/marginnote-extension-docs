@@ -1,0 +1,88 @@
+---
+title: "场景插件基础"
+mode: "default"
+---
+
+`场景插件` 是MN5推出的新的插件类型，安装方式与`经典插件` 相同。本文中无特殊声明，所述“插件”均为`场景插件`。
+
+# 插件结构
+
+场景插件相比经典插件要简单的多，下面是一个场景插件的最简目录结构：
+
+<Tree>
+  <Tree.Folder name="project" defaultOpen>
+    <Tree.File name="mnaddon.json" />
+    <Tree.File name="index.html" />
+  </Tree.Folder>
+</Tree>
+
+<CodeGroup>
+
+```json mnaddon.json
+{
+  "addonid": "hello.world",
+  "title": "你好世界",
+  "version": "0.1.0",
+  "author": "我",
+  "marginnote_version_min": "4.5.0",
+  "immersiveOnly": true,
+  "panel": "index.html"
+}
+```
+
+```html index.html
+<!DOCTYPE html>
+<html>
+
+<body>
+  <button onclick="ask()">现在开着哪个学习集？</button>
+  <div id="out"></div>
+
+  <script>
+    async function ask() {
+      var out = document.getElementById("out");
+      try {
+        var r = await mn.api("/ui-state");
+        var t = r.state.topicid;
+        out.textContent = t
+          ? "当前学习集 id：" + t
+          : "当前未打开学习集";
+      } catch (e) {
+        out.textContent = "出错了：" + e;
+      }
+    }
+  </script>
+</body>
+
+</html>
+```
+
+</CodeGroup>
+
+可见，场景插件本质上是一个在`window`上注入了`mn`对象的 HTML 网页面板。
+
+如果将这些项目下文件打包到 zip 文件根目录，并更改扩展名为`.mnaddon`便是一个符合标准的插件。
+
+如果想使用插件，需点击设置右侧三个点→插件→导入 进行安装，并在场景模板中启用该插件。
+
+<Accordion title="上述插件安装后运行效果">
+  ![Image](/images/image.png "Image")
+</Accordion>
+
+# 清单字段
+
+- addonid: 插件的唯一名称，id 相同即为同一插件，id 不同即为不同插件。
+- title: 插件在 MN 内显示的名称
+- version: 插件在 MN 内显示的版本号
+- author: 插件在 MN 内显示的作者名
+- marginnote_version_min: 插件要求的最低 MN 版本
+- immersiveOnly: 仅在沉浸模式（MN5 的新界面）下可用，<u>默认为 false</u>。建议场景插件开启此选项。
+- panel: 指定插件面板的 html 文件位置
+- icon: 指定插件图标位置
+- panelWidth: 面板宽度，默认为 380
+- panelMaxHeight: 页面高度的上限，默认为 560
+- events: 声明可注册事件列表，默认为[]
+- excerptClaim: 声明可接收的摘录。`{"hashtag": "#X", "configKey": "k"}`，其中`configKey`可选。
+- cardCommands：卡片菜单里的命令
+
+以上字段为简单介绍，具体配置请参见对应文档。
