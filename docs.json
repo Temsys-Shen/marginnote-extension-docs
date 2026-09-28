@@ -20,15 +20,15 @@
             "group": "开始",
             "icon": "flag-pennant",
             "pages": [
-              "untitled-page",
-              "ai"
+              "zh/introduction",
+              "zh/ai-dev"
             ]
           },
           {
             "group": "基础",
             "pages": [
-              "ji",
-              "untitled-page-2"
+              "zh/plugin-base",
+              "zh/mnrails"
             ]
           },
           {
@@ -48,8 +48,8 @@
           {
             "group": "Getting Started",
             "pages": [
-              "index",
-              "quickstart"
+              "en/introduction",
+              "en/quickstart"
             ]
           }
         ]
