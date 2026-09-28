@@ -1,0 +1,18 @@
+---
+title: "使用sdk与MN进行交互"
+description: " "
+---
+
+```text
+window.mn
+├── version: number          // sdk版本
+├── currentMode: "workspace" | "mini"
+├── lang: string             // App 界面语言
+├── locale: string           // 系统语言-地区
+├── api(path, opts) => Promise<json>
+├── ai(noteid, taskId, params) => Promise<json>
+├── call(name, data) => Promise<json>  // 老写法专用，新插件别用
+├── on(event, cb)
+├── fit() / height(h) / size(w,h) / mode(m) / close() / reload()
+└── log(...args)
+```

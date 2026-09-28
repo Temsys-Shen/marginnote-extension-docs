@@ -28,7 +28,8 @@
             "group": "基础",
             "pages": [
               "zh/plugin-base",
-              "zh/mnrails"
+              "zh/mnrails",
+              "zh/sdk"
             ]
           },
           {
