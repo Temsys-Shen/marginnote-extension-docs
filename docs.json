@@ -29,7 +29,9 @@
             "pages": [
               "zh/plugin-base",
               "zh/mnrails",
-              "zh/sdk"
+              "zh/sdk",
+              "shi-jian-xit",
+              "ui"
             ]
           },
           {
@@ -38,7 +40,10 @@
           },
           {
             "group": "深入插件",
-            "pages": []
+            "pages": [
+              "untitled-page",
+              "zui-jia"
+            ]
           }
         ],
         "default": true

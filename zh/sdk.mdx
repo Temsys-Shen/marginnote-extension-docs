@@ -3,16 +3,95 @@ title: "使用 window.mn 与MN进行交互"
 description: " "
 ---
 
-```text
+场景插件在加载时，MN 会向上下文注入 `mn` 实例对象，您可以通过访问其上的成员来进行与 MN 的交互。
+
+```typescript
 window.mn
 ├── version: number          // sdk版本
 ├── currentMode: "workspace" | "mini"
 ├── lang: string             // App 界面语言
 ├── locale: string           // 系统语言-地区
+├── theme: "light" | "dark"	 // 白色、棕褐色、绿色 = light；灰色、黑色 = dark
+├── _drag
 ├── api(path, opts) => Promise<json>
 ├── ai(noteid, taskId, params) => Promise<json>
-├── call(name, data) => Promise<json>  // 老写法专用，新插件别用
+├── call(name, data) => Promise<json>  // 向 main.js 发送消息并获取返回值
 ├── on(event, cb)
 ├── fit() / height(h) / size(w,h) / mode(m) / close() / reload()
 └── log(...args)
 ```
+
+# 只读信息
+
+以下成员均为 `mn` 对象下的只读成员：
+
+- version：插件 SDK 版本号
+- currentMode：
+- lang
+- locale
+- theme
+- \_drag
+
+```javascript
+>	[mn.version,mn.currentMode,mn.lang,mn.locale,mn.theme,mn._drag]
+<	[
+	  1,
+	  "workspace",
+	  "zh-Hans",
+	  "zh-CN",
+	  "dark",
+	  false
+	]
+```
+
+# 方法
+
+## api(path, opts)
+
+对 MN 数据进行 CRUD 操作。此方法调用方式与 Marginnote CLI 相同，但有部分 API 不可用。准确可用 API 需查询 capabilities。
+
+下面代码演示了如何使用 `mn.api` 进行操作
+
+<CodeGroup>
+
+```javascript GET
+// 😋获取所有 api 可用能力
+const capabilities = mn.api("/capabilities")
+
+// 按文档顺序获取该学习集的卡片
+const tree = await mn.api("/study-sets/" + topicid + "/tree?sort=document");
+
+// 获取当前打开的学习集 ID
+const st = await mn.api("/ui-state");
+```
+
+```javascript POST
+await mn.api('/notes/' + id + '/edits', {method: 'POST', body: {ops: [
+  {op: 'setTitle', text: '…', expectedPrefix: '当前标题的开头'},
+  {op: 'appendComment', text: '…'},
+  {op: 'deleteComment', index: 2, expectedPrefix: '…'},
+  {op: 'removeHashtags', hashtags: ['#VocabPending']},
+  {op: 'setAddonValues', addon: '任意', values: {status: 'done'}}
+], confirm: true, syncReview: false}});
+```
+
+</CodeGroup>
+
+## ai(noteid, taskId, params)
+
+## call(name, data) 
+
+## on(event, cb)
+
+## UI 相关
+
+- fit() 
+- height(h) 
+- size(w,h) 
+- mode(m) 
+- close() 
+- reload()
+
+## log
+
+记录日志。但由于现在没有查看的入口，作用尚不明确。
