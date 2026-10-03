@@ -32,7 +32,9 @@
               "zh/sdk",
               "zh/ui",
               "zh/data-interact",
-              "zh/events"
+              "zh/events",
+              "zh/network",
+              "zh/logo"
             ]
           },
           {
