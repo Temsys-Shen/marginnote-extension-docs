@@ -26,11 +26,11 @@ window.mn
 以下成员均为 `mn` 对象下的只读成员：
 
 - version：插件 SDK 版本号
-- currentMode：'workspace' | 'mini'。需要插件自行进行适配
+- currentMode：`workspace`/`mini`。需要插件自行进行适配
 - lang： App 界面语言。
 - locale： 系统所在区域。
-- theme： 'light' | 'dark'。白色、棕褐色、绿色 为 light；灰色、黑色 为 dark
-- \_drag：
+- theme： `light`/`dark`。白色、棕褐色、绿色为 `light`；灰色、黑色为 `dark`
+- \_drag：作用暂不明确
 
 ```javascript
 >	[mn.version,mn.currentMode,mn.lang,mn.locale,mn.theme,mn._drag]
@@ -77,7 +77,7 @@ await mn.api('/notes/' + id + '/edits', {method: 'POST', body: {ops: [
 
 </CodeGroup>
 
-具体实践详见数据交互
+具体实践详见[数据交互](/zh/data-interact)。
 
 ## ai(noteid, taskId, params)
 
@@ -115,39 +115,49 @@ const r = await mn.ai(
 if(r.ok) console.log(r.json.reply);
 ```
 
-具体实践详见使用 MN 内置 AI
+具体实践详见 [使用 MN 内置 AI](/zh/use-inner-ai)
 
 ## call(name, data)
 
-用于在场景插件中使用非 
+用于调用`main.js`中定义的函数并接收回调。
+
+具体实践详见[面板之外](/zh/jsaddon)
 
 ## on(event, cb)
 
 `mn.on` 用于监听 MN 发送的事件。你需要先在 `mnaddon.json` 里声明你要监听哪些事件。
 
-```json mnaddon.json
+```json mnaddon.json highlight={9} focus={9}
 {
-	...
+	"addonid": "mn.hello",
+	"title": "你好世界",
+	"version": "0.1.0",
+ 	"author": "我",
+  	"marginnote_version_min": "4.5.0",
+  	"panel": "index.html",
+  	"icon": "hello.png",
 	"events":["excerpt"]
-	...
 }
 ```
+
 ```javascript
 mn.on("excerpt", async (card) => {
   console.log(`New excerpt added: ${card.noteid}`)
 });
 ```
 
+具体实践详见 [事件系统](/zh/events) 
+
 ## UI 相关
 
 - fit(): 自适应面板高度
 - height(h): 设置面板高度
 - size(w,h): 设置面板宽高
-- mode(m): 设置面板模式为 'workspace' | 'mini'
+- mode(m): 设置面板模式为`workspace`/`mini`
 - close(): 关闭面板
 - reload(): 重载面板
 
-具体实践详见 UI 控制
+具体实践详见[UI 控制](/zh/ui)
 
 ## log
 

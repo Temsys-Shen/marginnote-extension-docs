@@ -31,6 +31,7 @@
               "zh/mnrails",
               "zh/sdk",
               "zh/ui",
+              "zh/data-interact",
               "zh/events"
             ]
           },
@@ -42,6 +43,7 @@
             "group": "深入插件",
             "pages": [
               "zh/jsaddon",
+              "zh/use-inner-ai",
               "zh/best-practice"
             ]
           }
