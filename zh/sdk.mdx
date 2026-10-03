@@ -10,7 +10,7 @@ window.mn
 ├── version: number          // sdk版本
 ├── currentMode: "workspace" | "mini"
 ├── lang: string             // App 界面语言
-├── locale: string           // 系统语言-地区
+├── locale: string           // 系统地区
 ├── theme: "light" | "dark"	 // 白色、棕褐色、绿色 = light；灰色、黑色 = dark
 ├── _drag
 ├── api(path, opts) => Promise<json>
@@ -26,11 +26,11 @@ window.mn
 以下成员均为 `mn` 对象下的只读成员：
 
 - version：插件 SDK 版本号
-- currentMode：
-- lang
-- locale
-- theme
-- \_drag
+- currentMode：'workspace' | 'mini'。需要插件自行进行适配
+- lang： App 界面语言。
+- locale： 系统所在区域。
+- theme： 'light' | 'dark'。白色、棕褐色、绿色 为 light；灰色、黑色 为 dark
+- \_drag：
 
 ```javascript
 >	[mn.version,mn.currentMode,mn.lang,mn.locale,mn.theme,mn._drag]
@@ -77,20 +77,77 @@ await mn.api('/notes/' + id + '/edits', {method: 'POST', body: {ops: [
 
 </CodeGroup>
 
+具体实践详见数据交互
+
 ## ai(noteid, taskId, params)
 
-## call(name, data) 
+`mn.ai`允许你使用 MN 内置的 AI 执行任务。需要注意的是，使用此命令前需在 `template.json` 中定义任务 id。
+
+```json template.json
+{
+  "aiTasks": [
+    {
+      "id": "starter_explain", 
+      "title": "解释一下", 
+      "trigger": "user",
+      "scope": "word_sentence",
+      "tier": 1,
+      "output": {"reply": "string"}, 
+      "required": ["reply"],
+      "prompt": "用一句中文解释给定的词在学习笔记语境下的意思。"
+    }
+  ],
+  ...
+}
+```
+
+下面是调用示范
+
+```javascript
+const r = await mn.ai(
+  noteid, 
+  "starter_explain", 
+  {
+    word: "photosynthesis", 
+    sentence: "..."
+  }
+);
+if(r.ok) console.log(r.json.reply);
+```
+
+具体实践详见使用 MN 内置 AI
+
+## call(name, data)
+
+用于在场景插件中使用非 
 
 ## on(event, cb)
 
+`mn.on` 用于监听 MN 发送的事件。你需要先在 `mnaddon.json` 里声明你要监听哪些事件。
+
+```json mnaddon.json
+{
+	...
+	"events":["excerpt"]
+	...
+}
+```
+```javascript
+mn.on("excerpt", async (card) => {
+  console.log(`New excerpt added: ${card.noteid}`)
+});
+```
+
 ## UI 相关
 
-- fit() 
-- height(h) 
-- size(w,h) 
-- mode(m) 
-- close() 
-- reload()
+- fit(): 自适应面板高度
+- height(h): 设置面板高度
+- size(w,h): 设置面板宽高
+- mode(m): 设置面板模式为 'workspace' | 'mini'
+- close(): 关闭面板
+- reload(): 重载面板
+
+具体实践详见 UI 控制
 
 ## log
 

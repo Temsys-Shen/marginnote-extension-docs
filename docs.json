@@ -30,8 +30,8 @@
               "zh/plugin-base",
               "zh/mnrails",
               "zh/sdk",
-              "zh/events",
-              "zh/ui"
+              "zh/ui",
+              "zh/events"
             ]
           },
           {
