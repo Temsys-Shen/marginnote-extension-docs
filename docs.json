@@ -30,8 +30,8 @@
               "zh/plugin-base",
               "zh/mnrails",
               "zh/sdk",
-              "shi-jian-xit",
-              "ui"
+              "zh/events",
+              "zh/ui"
             ]
           },
           {
@@ -41,8 +41,8 @@
           {
             "group": "深入插件",
             "pages": [
-              "untitled-page",
-              "zui-jia"
+              "zh/jsaddon",
+              "zh/best-practice"
             ]
           }
         ],
