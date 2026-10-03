@@ -2,6 +2,66 @@
 title: "UI 控制"
 ---
 
-<Warning>
-  本文尚未完成
-</Warning>
+# 窗口尺寸
+
+面板首次加载时，其尺寸将采用 `mnaddon.json`中的 `panelWidth` 与 `panelMaxHeight` ，未填写时默认值分别为 380 和 560。
+
+当窗口高度被更改后，MN 会对高度做如下处理：
+
+```text
+h' = MIN(MAX(h, 54), maxContentHeight)
+```
+
+其中`maxContentHeight`默认值为560，如果插件有main.js 文件，可以通过代码修改此值：
+
+```javascript main.js
+var p = AddonWebPanel.panel();  
+p.maxContentHeight = 760
+```
+
+关于 main.js 相关信息详见 [面板之外](/zh/jsaddon)
+
+## 顶部拖拽栏
+
+需要注意的是，每个面板顶部都有一个 36px 高的拖拽条。因此在开发时最好不要在顶部放置可交互的 UI 元素。此高度您也可以通过读取 CSS 变量`--mn-drag-h` 来获取
+
+## 更改窗口尺寸
+
+- mn.height(h)：修改页面高度。无动画
+- mn.fit()：将面板**高度**调整为`<html>`的高度。页面加载完成后 MN 会自动调用一次，后续内容发生变化时需要您自行再次调用。
+- mn.size(w, h)：同时指定面板宽度与高度。这是唯一可以修改宽度的接口。有过渡动画
+
+# 面板模式
+
+面板有`workspace`与 `mini`两种模式。您可以为您的插件设计两种大小的样式。
+
+## 更改面板模式
+
+`mn.mode(m)` 只修改模式的标记，不改变面板尺寸。因此只调用 `mode` 而不调用 `size`，窗口不会有任何变化，因此需要自行更改窗口大小
+
+```javascript
+mn.mode('mini');
+mn.size(210, 54);
+// or
+mn.fit();
+```
+
+模式被修改后，MN 会通过以下方式通知页面：
+
+- 修改 `<html>` 元素的 `data-mode` 属性
+- 修改 `mn.currentMode`
+
+## 适配两种模式
+
+适配面板模式可以用样式区分。因为MN 会修改 `data-mode` 属性，可以利用 CSS 的方式进行自动适配：
+
+```css
+:root[data-mode="mini"] body { padding: 6px 10px }
+:root[data-mode="mini"] .fold { display: none }
+```
+
+如果有需要逻辑处理，还可用代码可以读取 `mn.currentMode` ，或在根元素上挂载`MutationObserver`，来监听 `data-mode` 的变化。
+
+# 关闭与重载
+
+可以通过调用`mn.close()`与`mn.reload()` 来关闭与重载插件面板，这将丢失内存中的所有数据。
