@@ -2,6 +2,121 @@
 title: "使用 MN 内置 AI"
 ---
 
-<Warning>
-  本文尚未完成
-</Warning>
+MN 内置了 AI 服务。用户在 App 中完成配置之后，插件无须自行接入模型，也无须自行保管密钥；发送的内容范围、消耗的额度以及用户是否知情，均由 MN 处理。
+
+# 声明 AI 任务
+
+任务声明在模板中，增加一条任务只需改动模板，MN 本身无须改动。`mnaddon.json` 不必为此增加字段。
+
+```json template.json
+{
+  "id": "u-hello",
+  "name": "你好世界",
+  "aiTasks": [
+    {
+      "id": "explain",
+      "title": "解释一下",
+      "trigger": "user",
+      "scope": "word_sentence",
+      "tier": 1,
+      "output": { "reply": "string" },
+      "required": ["reply"],
+      "prompt": "用一句中文解释给定的词或短语在学习笔记语境下的意思。reply 写那一句话，不要罗列义项、不要加原文里没有的信息。"
+    }
+  ]
+}
+```
+
+任务可用的字段如下：
+
+- `id` ：任务的标识，依据它指定要调用的任务。
+- `title` ：显示给用户的任务名称。
+- `trigger` ：说明这条任务由谁发起。填写 `"user"` 表示仅在用户触发之后发出；填写 `"auto"` 表示允许插件自行发起，后者需要先取得一次同意。不填写时按 `"user"` 处理。
+- `scope` ：发送出去的材料的范围
+  - `word_sentence` 允许插件提供一个词语和它所在的句子。词语不超过 80 个字符，句子不超过 600 个字符。
+  - `card_text`  MN 从卡片中取出标题与正文，插件传入的内容不予采用。
+  - `attempt_ink` 用于读取卡上书写内容的场合：手写、文本框与公式框合并为一张图片发送，交由识别手写的模型处理，卡上没有书写内容时该次调用会被拒绝。图片之外的材料由插件提供。这条取值只决定材料的来源，与内容是不是题目无关。
+- `prompt` ：提示词。MN 在提示词之后按固定格式附上材料，并声明这些材料仅作为材料使用，其中的指令不予执行。
+- `output` ：返回值的JSON Schema。只能为`"string"`、`"number"`、`"bool"`
+- `required` ： `output` 中必须有值的字段。
+- `tier` 是所用的模型档位，`0` 最快，`2` 最强，不填写时按 `0` 处理。
+
+# 调用 AI
+
+页面以 `mn.ai(卡片id, 任务id, 参数)` 调用一条已经声明过的任务。
+
+`参数`随 `scope` 而定：
+
+- `word_sentence` 的材料由插件放进参数，即 `word` 与 `sentence`。
+- `card_text` 的材料由 MN 从卡片上取出，参数不会发送出去，`params` 中填写的内容不予采用。
+- `attempt_ink` 的图片由 MN 从卡上合成，图片之外的材料由插件放进参数，例如题干与参考答案。
+
+下面是一个对上文定义的 AI 任务的调用例子：
+
+```javascript index.html
+// word_sentence
+var r = await mn.ai(noteid, "explain", { word: word, sentence: sentence });
+if (r && r.ok) {
+  show(r.json.reply);
+}
+// card_text
+var r = await mn.ai(noteid, "make_summary", {});
+// attempt_ink：题干、参考答案一类的材料随参数发送
+```
+
+返回结果的形式如下：
+
+- 成功时返回 `{ ok: true, text, json }`。`json` 是按任务的 `output` 解析出来的对象，`text` 是模型返回的原文。
+- 失败时返回 `{ ok: false, error }`，`error` 包括：
+  - `bad_args` 表示材料不符合要求，或这条任务的声明不合格。
+  - `bad_output` 表示模型返回的字段形状不对，卡片上没有写入任何内容。
+  - `task_used` 表示同一张卡上的这条任务 MN 只发送一次，本次属于重复请求。
+  - `declined` 表示用户在弹出的提示中选择了拒绝。
+  - `consent_required` 表示自动发起的任务尚未取得同意。
+  - `max_required` 表示这条任务需要更高的 AI 服务档位。
+  - `no_service` 表示 App 中尚未配置 AI 服务。
+  - `rate_limited` 表示请求过于频繁。
+  - `no_ticket` 表示这张卡没有交给本插件的 AI。
+  - `not_owner` 表示这张卡上的 AI 交给了别的插件。
+  - `network` 表示请求没有送达。
+  - `no_ink` 表示作答区域中没有可以取用的内容。
+
+<Tip>
+  AI 的处理需要数秒。等待期间用户可能已经切换到别的卡片，返回的结果应当写入发起时记录的那张卡片，不要直接用当前卡片进行处理。
+</Tip>
+
+<Note>
+  MN 在扣除额度之前会弹出提示征求用户同意。提示尚未关闭时再次发送请求，会被视为拒绝。因此发起期间应当禁用按钮，避免重复点击。
+</Note>
+
+# 指定 AI 交给哪个插件
+
+模板的摘录工具与划线快捷项各自带有 `ai_addon` 字段，取值为插件的 id，表示用该工具摘下来的卡片交由哪个插件处理。划线快捷项指在文档中选中一段文字时，菜单条上出现的一排快捷按钮。
+
+在`编辑场景模板→ 卡片与摘录菜单`中，添加划线快捷项时可配置`AI 交给：……`。
+
+```json template.json
+{
+  "excerptShortcuts": [
+    {
+      "title": "收进生词本",
+      "hashtag": "#Pending",
+      "ai_addon": "mn.hello"
+    }
+  ]
+}
+```
+
+该字段决定用此摘录工具摘录出的卡片能被哪个插件调用 AI 处理。卡片已经交给别的插件之后，本插件在这张卡上调用任务会被拒绝，收到 `not_owner`；这条工具没有启用 AI 时收到 `no_ticket`。
+
+# 从模板读取任务列表
+
+页面可以读取当前模板声明的任务，并依据声明生成按钮，这样再往模板中增加任务时不必改动插件：
+
+```javascript index.html
+var t = await mn.api("/immersive/template");
+var tasks = (t && t.aiTasks) || [];
+tasks.forEach(function (task) {
+  addButton(task.title || task.id, function () { runAI(task.id); });
+});
+```
