@@ -1,6 +1,50 @@
 ---
-title: "网络请求"
+title: "网络请求限制"
 ---
-<Warning>
-  本文尚未完成
-</Warning>
+
+# 请求限制
+
+`https:` 与 `wss:` 可以连接。这意味着插件可以直接引用 CDN 上的脚本、样式、字体与图片。
+
+需要注意的是，`http:` 与 `ws:` 不能连接。
+
+# 跨域请求
+
+面板的地址是 `mnpanel://panel`，在处理跨域请求配置 CORS 时可能会用到此地址。
+
+```text
+Access-Control-Allow-Origin: mnpanel://panel
+```
+
+# 页面跳转
+
+- 用户点击 `http:` 与 `https:` 链接时，地址交给系统浏览器打开，面板不会进行跳转。
+- 页面自行修改 `location`、提交表单都不会生效。要向服务端发送数据时，需用 `fetch`。
+
+# 内容安全策略
+
+面板的每条响应都带有内容安全策略（CSP），页面能加载的资源与能发起的连接由它限定。
+
+- 加载资源：只放行面板自身的文件、`mnpanel:` 与 `https:`，脚本、样式、图片、字体、音视频与 iframe 均受此约束。
+- 发起连接：放行面板自身的文件、`mnpanel:` 与 `https:`，另外还会放行 `wss:`、`data:` 与 `blob:`。
+- 禁用项：`object` 标签、`<base>` 标签与表单提交。
+
+策略逐条限定来源，完整取值如下：
+
+```text
+default-src 'self' mnpanel: https:
+connect-src 'self' mnpanel: https: wss: data: blob:
+script-src  'self' mnpanel: https:
+style-src   'self' mnpanel: https:
+img-src     'self' mnpanel: https:
+media-src   'self' mnpanel: https:
+font-src    'self' mnpanel: https:
+frame-src   'self' mnpanel: https:
+object-src  'none'
+base-uri    'none'
+form-action 'none'
+```
+
+<Note>
+  `script-src` 不含 `unsafe-eval`，因此 `eval` 与 `new Function` 都不能使用。同理，`setInterval`和`setTimeout`的传字符串的用法同样会被禁用。
+</Note>
