@@ -60,7 +60,7 @@ mn.on('excerpt', function (d) {
 
 如果只关心某一类摘录，可以用 `excerptClaim` 进行限制：
 
-```json
+```json highlight={15-18} focus={15-18}
 {
   "addonid": "mn.vocab",
   "author": "MarginNote",
@@ -84,7 +84,9 @@ mn.on('excerpt', function (d) {
 
 只有包含 `#VocabPending` 标签的新摘录事件才会触发该插件中的`excerpt`事件。
 
-`configKey` 可选，写了之后此标签可以由模板配置覆盖，取值为模板里 `pluginConfigs[您的插件id]["pendingTag"]`。不写 `excerptClaim` 时，所有摘录行为均会唤起插件面板并触发`excerpt` 事件。
+`configKey` 可选，配置之后此标签可以由模板配置覆盖。如上配置时，取值为模板里 `pluginConfigs["mn.vocab"]["pendingTag"]`。
+
+不写 `excerptClaim` 时，所有摘录行为均会唤起插件面板并触发`excerpt` 事件。
 
 ## 卡片菜单命令
 
@@ -96,7 +98,7 @@ mn.on('cardCommand', function (d) {
 });
 ```
 
-卡片命令具体配置参见
+卡片命令具体配置参见 [卡片与摘录菜单命令](/zh/menu-commands) 
 
 ## 注意事项
 
