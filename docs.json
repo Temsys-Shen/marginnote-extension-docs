@@ -38,7 +38,9 @@
           },
           {
             "group": "模板配置",
-            "pages": []
+            "pages": [
+              "zh/basic-package"
+            ]
           },
           {
             "group": "深入插件",
