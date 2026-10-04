@@ -104,7 +104,8 @@ mn.on('excerpt', function (d) {
 
 ```javascript
 mn.on('cardCommand', function (d) {
-  // d = { id: '命令id', noteid: '卡片id' }
+  var commandID = d.id
+  var noteID = d.noteID
 });
 ```
 
