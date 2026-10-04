@@ -1,3 +1,172 @@
 ---
 title: "卡片与摘录菜单命令"
 ---
+
+MN 的弹出菜单（如摘录、卡片）中可以加入插件自己的命令。
+
+# 声明命令
+
+命令在 `mnaddon.json` 的 `cardCommands` 字段中声明。
+
+```json mnaddon.json
+{
+  "addonid": "mn.starter",
+  "title": "起步",
+  "version": "0.3.0",
+  "marginnote_version_min": "4.5.0",
+  "panel": "index.html",
+  "cardCommands": [
+    {
+      "id": "annotate",
+      "title": { "zh-Hans": "添加批注", "en": "add a comment" },
+      "when": { "addonValue": "status", "equals": "done" }
+    }
+  ]
+}
+```
+
+命令可用的字段如下：
+
+- `id` 是命令的标识，模板依据它引用这条命令。
+- `title` 是命令在菜单中显示的文字。可以为字符串或按语言的字典，字典的键为 `zh-Hans`、`zh-Hant`、`en` 等。
+- `when` 用来限定这条命令出现在哪些卡片上。该字段可以不写，不写时每张卡片都会出现这条命令。
+
+## when 条件与组合条件
+
+`when` 决定了命令是否在菜单中显示。判断过程不会执行插件的页面代码，因此其中只能使用卡片上的既有数据，以及插件先前存入卡片的字段。可用的条件分以下几类。
+
+判断插件存入卡片的字段，使用 `addonValue`。它可以比较字段的值，也可以判断字段是否存在：
+
+```json
+{ "addonValue": "status", "equals": "done" }
+{ "addonValue": "status", "in": ["a", "b"] }
+{ "addonValue": "status", "exists": false }
+```
+
+<Note>
+  `addonValue`的添加参见下文 [特殊处理](#特殊处理)
+</Note>
+
+判断卡片自身的状态，使用下列写法：
+
+```json
+{ "hashtag": "#practice/question" }
+{ "hasExcerpt": true }
+{ "hasTitle": true }
+{ "hasChildren": false }
+```
+
+其中 ：
+
+- `hashtag` 判断卡片上是否带有指定的标签
+- `hasTitle` 判断卡片是否有标题
+- `hasChildren` 判断卡片在脑图上是否有子卡。
+- `hasExcerpt` 判断卡片是否带着从文档摘来的内容，其含义与 `batch-get` 返回的 `sourceAnchor.hasExcerpt` 相同。
+
+判断卡片在脑图上的位置关系，使用 `parent`、`child` 与 `descendant`，它们分别表示父卡、子卡、任意一张下层卡 满足里面的条件。
+
+### 关系组合
+
+条件可以用 `and`、`or` 与 `not` 组合起来：`and` 要求数组中的条件全部成立；`or` 只要求其中一个成立；`not` 表示不能满足某个条件。其中`and` 与 `or` 接受一个条件数组。<br />这几种组合可以互相嵌套，一个数组里的某一条条件本身也可以是另一种组合。
+
+### 例1
+
+以下面 `branch` 命令为例，它要求卡片本身既不带 `#practice/question` 标签，也不带 `#practice/answer` 标签，并且它的子卡同样不带 `#practice/answer` 标签。
+
+```json mnaddon.json
+{
+  "id": "branch",
+  "when": {
+    "and": [
+      { "not": { "hashtag": "#practice/question" } },
+      { "not": { "hashtag": "#practice/answer" } },
+      { "child": { "not": { "hashtag": "#practice/answer" } } }
+    ]
+  },
+  "title": {"zh-Hans": "练习该分支", "en": "Practise this branch"}
+}
+```
+
+### 例2
+
+以下面 `choose_sense` 命令为例把两种情况并列起来，满足其中一项时才会出现：卡片的 `status` 字段等于 `pending`，或者卡片没有 `status` 字段并带有 `#VocabPending` 标签：
+
+```json mnaddon.json
+{
+  "id": "choose_sense",
+  "when": {
+    "or": [
+      { "addonValue": "status", "equals": "pending" },
+      { "and": [
+        { "not": { "addonValue": "status", "exists": true } },
+        { "hashtag": "#VocabPending" }
+      ] }
+    ]
+  },
+  "title": {
+    "zh-Hans": "选一个意思",
+    "zh-Hant": "選一個意思",
+    "en": "Pick a sense"
+  }
+}
+```
+
+### 特殊处理
+
+如果判断依据不属于以上任何一项，可以先把结论存成卡片字段，菜单再依据这个字段来判断：
+
+```javascript
+await mn.api('/notes/' + id + '/edits', 
+  {
+    method: 'POST', 
+    body: {
+      ops: [{
+        op: 'setAddonValues', 
+        addon: 'mn.starter', 
+        values: {status: 'done'}
+      }],
+    confirm: true
+}Ï});
+```
+
+# 在菜单中添加命令
+
+命令在插件中声明之后，还需要由模板将它添加到菜单中。**模板**的 `selectionMenu` 字段登记了 MN 的各个弹出菜单。
+
+- `cards` 是卡片菜单，在脑图或大纲中点击一张卡片时弹出。
+- `documents` 是文档上的卡片菜单，点击完成摘录的文档中的卡片时弹出。
+- `text` 是选中文本的菜单，在文档中选中一段文字时弹出。
+
+要把命令添加到某一张菜单，就在这张菜单的列表里写入 `addon.<插件id>.<命令id>:`，**末尾的冒号不能省略**：
+
+```json template.json
+{
+  "selectionMenu": {
+    "cards": [
+      "noteHighlight:",
+      "commentNote",
+      "addon.mn.starter.annotate:"
+    ],
+    "documents": [
+      "sendHighlight:",
+      "noteHighlight:",
+      "addon.mn.starter.annotate:"
+    ]
+  }
+}
+```
+
+# 接收命令
+
+页面不需要在 `events` 中登记 `cardCommand`，直接在页面代码中监听即可：
+
+```javascript index.html
+mn.on('cardCommand', function (d) {
+  var commandID = d.id
+  var noteID = d.noteID
+});
+```
+
+<Note>
+  用户点击命令时，如果插件面板完全关闭，MN 会先以 `mini` 模式把面板打开，再推送命令事件。
+</Note>

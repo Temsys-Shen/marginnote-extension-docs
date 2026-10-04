@@ -8,9 +8,11 @@ title: "事件系统"
 
 插件面板需要获知 MN 内部发生的事情时，可以通过事件系统接收。事件必须先声明，而后才能在面板中收到来自 MN 的推送。
 
-## 声明事件
+# 声明事件
 
-在 `mnaddon.json` 中增加 `events` 字段：
+事件需要声明后才能被插件接收，否则对其的监听无效。
+
+声明事件需在 `mnaddon.json` 中增加 `events` 字段：
 
 ```json mnaddon.json highlight={9} focus={9}
 {
@@ -42,7 +44,7 @@ title: "事件系统"
 - `imported`：卡片被批量添加进学习集。
   - 无返回值
 
-## 监听事件
+# 监听事件
 
 ```javascript
 mn.on('excerpt', function (d) {
@@ -54,7 +56,15 @@ mn.on('excerpt', function (d) {
 });
 ```
 
-## 摘录事件筛选
+<Warning>
+  对于同一事件、同一张卡，在 1.5 秒内的重复事件会被丢弃
+</Warning>
+
+<Note>
+  页面加载完成之前推来的事件会进入队列，加载完成后会统一发放
+</Note>
+
+# 摘录事件筛选
 
 面板关闭时用户进行摘录操作，MN 会先用 `mini` 模式把面板打开，再推送摘录事件，事件中的 `opened` 为 `true`。您可以在完成处理后调用 `mn.close()` 进行关闭。
 
@@ -88,7 +98,7 @@ mn.on('excerpt', function (d) {
 
 不写 `excerptClaim` 时，所有摘录行为均会唤起插件面板并触发`excerpt` 事件。
 
-## 卡片菜单命令
+# 卡片菜单命令
 
 `cardCommand` 不需要在 `events` 中声明。用户在卡片菜单里点了您声明过的命令之后：
 
@@ -98,10 +108,4 @@ mn.on('cardCommand', function (d) {
 });
 ```
 
-卡片命令具体配置参见 [卡片与摘录菜单命令](/zh/menu-commands) 
-
-## 注意事项
-
-- 同一事件、同一张卡，1.5 秒内的重复事件会被丢弃
-- 页面加载完成之前推来的事件会进入队列，加载完成后会统一发放
-- 没有声明 `events` 的插件，无法收到事件
+卡片命令具体配置参见[卡片与摘录菜单命令](/zh/menu-commands)。
