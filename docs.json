@@ -30,11 +30,10 @@
               "zh/plugin-base",
               "zh/mnrails",
               "zh/sdk",
+              "zh/logo",
               "zh/ui",
               "zh/data-interact",
-              "zh/events",
-              "zh/network",
-              "zh/logo"
+              "zh/events"
             ]
           },
           {
@@ -44,9 +43,11 @@
           {
             "group": "深入插件",
             "pages": [
-              "zh/jsaddon",
+              "zh/best-practice",
+              "zh/network",
+              "zh/menu-commands",
               "zh/use-inner-ai",
-              "zh/best-practice"
+              "zh/jsaddon"
             ]
           }
         ],
