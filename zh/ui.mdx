@@ -19,7 +19,7 @@ var p = AddonWebPanel.panel();
 p.maxContentHeight = 760
 ```
 
-关于 main.js 相关信息详见 [面板之外](/zh/jsaddon)
+关于 main.js 相关信息详见 [面板之外](/zh/jsaddon) 
 
 ## 顶部拖拽栏
 
@@ -28,12 +28,12 @@ p.maxContentHeight = 760
 ## 更改窗口尺寸
 
 - mn.height(h)：修改页面高度。无动画
-- mn.fit()：将面板**高度**调整为`<html>`的高度。页面加载完成后 MN 会自动调用一次，后续内容发生变化时需要您自行再次调用。
+- mn.fit()：将面板**高度**调整为`<html>`的高度。页面加载完成后 MN 会自动调用一次，建议后续内容发生变化时再次调用。
 - mn.size(w, h)：同时指定面板宽度与高度。这是唯一可以修改宽度的接口。有过渡动画
 
 # 面板模式
 
-面板有`workspace`与 `mini`两种模式。您可以为您的插件设计两种大小的样式。
+面板有`workspace`与 `mini`两种模式。建议按此为插件设计两种大小的样式。
 
 ## 更改面板模式
 

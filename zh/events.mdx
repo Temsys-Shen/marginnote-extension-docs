@@ -63,7 +63,7 @@ mn.on('excerpt', function (d) {
 
 # 摘录事件筛选
 
-面板关闭时用户进行摘录操作，MN 会先用 `mini` 模式把面板打开，再推送摘录事件，事件中的 `opened` 为 `true`。您可以在完成处理后调用 `mn.close()` 进行关闭。
+面板关闭时用户进行摘录操作，MN 会先用 `mini` 模式把面板打开，再推送摘录事件，事件中的 `opened` 为 `true`。如有需要，可以在完成处理后调用 `mn.close()` 进行关闭。
 
 如果只关心某一类摘录，可以用 `excerptClaim` 进行限制：
 
@@ -97,7 +97,7 @@ mn.on('excerpt', function (d) {
 
 # 卡片菜单命令
 
-`cardCommand` 不需要在 `events` 中声明。用户在卡片菜单里点了您声明过的命令之后：
+`cardCommand` 不需要在 `events` 中声明。用户在卡片菜单里点了声明过的命令之后会触发`cardCommand`事件：
 
 ```javascript
 mn.on('cardCommand', function (d) {
