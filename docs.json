@@ -60,7 +60,7 @@
             "openapi": "openapi/plugin-api.yaml",
             "icon": "book",
             "pages": [
-              "untitled-page"
+              "zh/api-ai-warning"
             ]
           }
         ],
