@@ -1,52 +1,53 @@
 openapi: 3.1.0
 info:
   title: 场景插件 API
-  summary: 场景插件在网页面板里可以调用的 Bridge 路由。
+  summary: 场景插件在网页面板里可以调用的接口。
   description: |
-    场景插件的面板是一个网页，页面里向 `/bridge/v1` 发请求，就能读写 MarginNote 里的数据。
-    请求由 MarginNote 在本进程内处理，与外部 CLI 走同一批处理程序，两侧的准入条件不同。
+    场景插件的面板是一个网页。页面里向 `/bridge/v1` 发请求，就能读写 MarginNote 里的数据。
+    请求由 MarginNote 处理，与外部命令行工具共用同一套处理代码。外部工具要带令牌，面板不必带。
     面板页面从 `mnpanel://panel/index.html` 加载，因此 `fetch('/bridge/v1' + path)` 属于同源请求。
 
-    面板侧调用受这些条件约束：
+    面板调用受这些条件约束：
 
-    - 请求不带令牌，本分组也不声明安全方案。
-    - 可用的路由范围由两道名单决定。模板的 `plugins` 名单与当前的沉浸态决定面板能否建立，
-      路由名单决定页面可用的端点。落在路由名单之外的请求返回 `403`，错误码为 `IN_PROCESS_NOT_ALLOWED`。
-    - `GET /capabilities` 里的 `requiresMax` 只约束外部 Agent。面板走进程内的路径，不受令牌、
-      订阅状态与跨设备批准的限制，端点可用与否只取决于该端点是否在名单上。
+    - 请求不带令牌，本文件也不声明安全方案。
+    - 页面能调用的接口范围由两道名单共同决定。模板的 `plugins` 名单与当前的沉浸态决定
+      面板能否建立，网页面板白名单决定页面能调用的接口。不在白名单里的请求返回 `403`，
+      错误码为 `IN_PROCESS_NOT_ALLOWED`。
+    - `GET /capabilities` 里的 `requiresMax` 只约束外部 Agent。面板的请求在 MarginNote 进程内处理，
+      不受令牌、订阅状态与跨设备批准的限制，接口能否调用只看该接口是否在白名单里。
     - 写操作里的 `addon` 由 MarginNote 改成当前面板所属插件的 id，`confirm` 由 MarginNote 补上。
       页面在这两项上填写的值不被采纳。
 
-    读端点用 `mn.api(path, opts)`。该方法把响应体一律按 JSON 解析，实现为
+    读取数据用 `mn.api(path, opts)`。该方法把响应体一律按 JSON 解析，实现为
     `fetch('/bridge/v1' + path, opts).then(r => r.json())`。
 
-    响应不是 JSON 的端点改用 `fetch` 原语：
+    响应的内容不是 JSON 的接口，改用 `fetch`：
 
     - `GET /guide` 返回 Markdown 正文。
     - `GET /notes/{noteid}/render` 返回卡片长图或 PDF。
     - `GET /documents/{bookmd5}/pages/{index}/content/{contentId}` 返回图片。
     - `GET /bundles/{bundleId}/files` 带 `?path=` 时返回该文件的原始字节。
 
-    失败的回包不会让 Promise 进入 reject。MarginNote 把错误信封
-    `{"error":{"code":"…","message":"…"}}` 当作响应体返回，因此落在 resolve 里。
-    判断调用结果看回包里是否带 `error`，写操作另看回执里的 `persisted`。
+    调用失败时 Promise 不会进入 reject。MarginNote 把错误对象
+    `{"error":{"code":"…","message":"…"}}` 当作响应体返回，因此结果落在 resolve 里。
+    判断调用结果看响应里是否带 `error`，写操作另看响应里的 `persisted`。
 
-    路由清单、各项上限与请求体结构随宿主版本变化，运行时的内容由 `GET /capabilities` 与
+    接口清单、各项上限与请求体结构随 MarginNote 的版本变化，运行时的内容由 `GET /capabilities` 与
     `GET /guide` 给出。
 
-    每条端点带两个自定义字段。`x-mn-source` 列出字段依据的出处，可以据此核对原文；
+    每个接口都带两个自定义字段。`x-mn-source` 列出说明所依据的出处，可以据此核对原文；
     `x-mn-todo` 列出尚未取到的部分。
   version: "0.91"
 x-mn-bridge-api-version: "0.91"
 x-mn-api-fingerprint: d165ea64cae5
-x-mn-route-catalog-snapshot: 宿主路由目录取自 2026-10-03 的 145 条快照
-x-mn-allowlist-source: output/doc/SDK路由参考_2026-09-21.md，宿主 123 条路由中放行 73 条
-x-mn-example-recordings: 标为真机实录的响应样本录制于 2026-09-18，录制时宿主 bridgeApiVersion 为 0.61
-x-mn-entry-point: 页面侧入口是 window.mn 垫片，不是 HTTP 端口
+x-mn-route-catalog-snapshot: 取自 2026-10-03 的接口清单快照，当时 145 条
+x-mn-allowlist-source: 取自 output/doc/SDK路由参考_2026-09-21.md，该文件列出 123 条接口，其中 73 条在网页面板里放行
+x-mn-example-recordings: 标为真机实录的响应样本录制于 2026-09-18，录制时 MarginNote bridgeApiVersion 为 0.61
+x-mn-entry-point: 插件的入口是页面里的 `window.mn`，不是 HTTP 端口
 security: []
 tags:
   - name: 能力与状态
-    description: 读宿主能力、版本与当前上下文。调用其他端点之前先读该组。
+    description: 读 MarginNote 的能力、版本与当前上下文。调用其他接口之前先读该组。
   - name: 卡片与摘录
     description: 卡片的读取与写入、摘录的创建、批注、标签、元数据与留白。
   - name: 手写会话
@@ -69,13 +70,13 @@ paths:
       summary: 获取接入引导
       operationId: getRoot
       description: |
-        引导说明，不带令牌即可读取。插件侧用不到该端点，收录是为了与白名单一一对应。
+        引导说明，不带令牌即可读取。插件用不到该接口，收录是为了与白名单一一对应。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:341
         - output/doc/SDK路由参考_2026-09-21.md:131
       x-mn-todo:
-        - 回执的形状与媒体类型都没有依据。
-        - 10-03 的路由目录快照里查不到该端点，收录该端点是为了与白名单对齐。
+        - 响应的结构与媒体类型都没有依据。
+        - 10-03 的路由目录快照里查不到该接口，收录该接口是为了与白名单一致。
       responses:
         '200':
           description: 引导说明。
@@ -83,13 +84,13 @@ paths:
             application/json:
               schema:
                 type: object
-                description: 回执形状没有依据。
+                description: 响应结构没有依据。
                 additionalProperties: true
               examples:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，待实测补入
+                    TODO: 本接口的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
       x-codeSamples:
@@ -104,9 +105,9 @@ paths:
       summary: 获取能力清单
       operationId: getCapabilities
       description: |
-        给出该宿主实际注册的全部路由，以及按主题分组的各项上限与语义。
+        给出 MarginNote 实际注册的全部路由，以及按主题分组的各项上限与语义。
 
-        读取该端点的用途是取各项上限与取值枚举，例如标签操作的取值、元数据的档位范围、
+        读取该接口的用途是取各项上限与取值枚举，例如标签操作的取值、元数据的取值范围、
         手写会话的上限。请求体的写法未收录，见 `GET /guide`。
       x-mn-source:
         - capabilities.json（2026-10-03 快照，全部顶层键）
@@ -120,7 +121,7 @@ paths:
                 $ref: '#/components/schemas/CapabilitiesResponse'
               examples:
                 recorded:
-                  summary: 真机实录（宿主 0.61，2026-09-18 录制）；实录只保留开头部分
+                  summary: 真机实录（MarginNote 0.61，2026-09-18 录制）；实录只保留开头部分
                   value: {
                       "routes": [
                         {
@@ -342,7 +343,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
       x-codeSamples:
         - lang: javascript
-          label: 判断该宿主是否注册了该端点
+          label: 判断 MarginNote 是否注册了该接口
           source: |
             const caps = await mn.api('/capabilities');
             const has = caps.routes.some(r => r.path === '/notes/{id}/edits');
@@ -354,23 +355,23 @@ paths:
       summary: 获取运行状态
       operationId: getStatus
       description: |
-        给出 App 名称与版本、契约版本、注册的路由条数、路由目录的指纹，以及运行规程的版本与哈希。
+        给出 App 名称与版本、契约版本、注册的路由条数、路由目录的校验值，以及运行规程的版本与哈希。
 
-        指纹变化即表示契约变了。把手上的路由清单连同指纹记下来，启动时比对一次，
-        即可判断是否需要重新抓 `GET /capabilities`。
+        校验值变化即表示契约变了。把手上的路由清单连同校验值记下来，启动时比对一次，
+        即可判断是否需要重新获取 `GET /capabilities`。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:408,423-424
         - output/tools/starter/mn.starter/index.html:159-160
       responses:
         '200':
-          description: 版本与指纹。
+          description: 版本与校验值。
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StatusResponse'
               examples:
                 recorded:
-                  summary: 真机实录（宿主 0.61，2026-09-18 录制）
+                  summary: 真机实录（MarginNote 0.61，2026-09-18 录制）
                   value: {
                       "routeCount": 87,
                       "appVersion": "4.5.0",
@@ -396,11 +397,11 @@ paths:
           $ref: '#/components/responses/Forbidden'
       x-codeSamples:
         - lang: javascript
-          label: 比对契约指纹
+          label: 比对契约校验值
           source: |
             const st = await mn.api('/status');
             if (st.apiFingerprint !== cachedFingerprint) {
-              // 指纹已变，手上的端点清单与字段都要重新核对
+              // 校验值已变，手上的接口清单与字段都要重新核对
             }
   /guide:
     get:
@@ -409,16 +410,15 @@ paths:
       summary: 获取运行时规程
       operationId: getGuide
       description: |
-        返回一份 Markdown 散文，内容是宿主写给接入方的运行时规程：连接与鉴权、各端点的请求体写法、
-        以及一批使用上的陷阱。本分组各端点的字段依据有一部分取自该端点。
+        返回一份 Markdown 文档，内容是 MarginNote 写给接入方的运行时规程：连接与鉴权、各接口的请求体写法、
+        以及一批使用上的陷阱。本分组各接口的字段依据有一部分取自该接口。
 
-        整张路由表里只有该端点返回 Markdown，因此 `mn.api` 无法读取。`mn.api` 的实现是
+        整张路由表里只有该接口返回 Markdown，因此 `mn.api` 无法读取。`mn.api` 的实现是
         `fetch('/bridge/v1' + path, opts).then(r => r.json())`，无条件按 JSON 解析，
-        Markdown 会让 `mn.api` 抛出 `SyntaxError`。读取该端点要改用 `fetch` 原语。
+        Markdown 会让 `mn.api` 抛出 `SyntaxError`。读取该接口要改用 `fetch` 原语。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:6,426
         - capabilities.json 的 guide 分组
-        - 插件端点字段取证-2026-10-06.md:21-34
       responses:
         '200':
           description: 规程全文，Markdown。响应头里的内容类型是 `text/markdown; charset=utf-8`。
@@ -439,7 +439,7 @@ paths:
         - lang: javascript
           label: 改用 fetch 原语读取
           source: |
-            // mn.api 会失败：该函数按 JSON 解析，该端点返回 Markdown
+            // mn.api 会失败：该函数按 JSON 解析，该接口返回 Markdown
             const md = await (await fetch('/bridge/v1/guide')).text();
 
             // 按版本号与哈希缓存；只按版本号缓存会漏掉正文改写
@@ -453,13 +453,13 @@ paths:
       operationId: getContext
       description: |
         给出当前打开的学习集与文档、当前页、选中的卡与焦点卡。与 `GET /ui-state` 的分工：
-        该端点的回包是整理过的语义，`/ui-state` 的回包是界面自己的键值。
+        该接口的响应是整理过的语义，`/ui-state` 的响应是界面自己的键值。
 
-        信息取不到不算失败，回包里 `available` 为 `false`，`reason` 说明原因。
+        信息取不到不算失败，响应里 `available` 为 `false`，`reason` 说明原因。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1061-1092
       x-mn-todo:
-        - 回执字段取自规程正文的散文描述，未见样本。
+        - 响应字段取自规程正文的文字描述，未见样本。
       responses:
         '200':
           description: 当前上下文。
@@ -472,7 +472,7 @@ paths:
                     type: boolean
                   reason:
                     type: string
-                    description: 获获获获获取不到时的原因。
+                    description: 获取不到时的原因。
                     enum:
                       - nothing_open
                       - app_not_responding
@@ -561,17 +561,17 @@ paths:
       summary: 列出已配对设备
       operationId: getDevices
       description: |
-        该端点的用途没有依据可查。该端点出现在 2026-09-21 生成的白名单里，在 2026-10-03 的路由目录
-        快照里已经查不到，运行规程里也没有提到过。收录该端点是为了与白名单一一对应，调用之前需要
-        先确认该宿主是否注册。
+        该接口的用途没有依据可查。该接口出现在 2026-09-21 生成的白名单里，在 2026-10-03 的路由目录
+        快照里已经查不到，运行规程里也没有提到过。收录该接口是为了与白名单一一对应，调用之前需要
+        先确认 MarginNote 是否注册。
       x-mn-source:
         - output/doc/SDK路由参考_2026-09-21.md:134
       x-mn-todo:
-        - 用途、请求体、回执形状与媒体类型都没有依据。
-        - 10-03 的路由目录快照里查不到该端点，需要重跑路由对账确认该端点是否还在。
+        - 用途、请求体、响应结构与媒体类型都没有依据。
+        - 10-03 的路由目录快照里查不到该接口，需要重跑路由核对确认该接口是否还在。
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -581,18 +581,18 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的用途与回执形状都没有依据，待实测补入
+                    TODO: 本接口的用途与响应结构都没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
       x-codeSamples:
         - lang: javascript
-          label: 探测该端点是否存在
+          label: 探测该接口是否存在
           source: |
             const r = await mn.api('/devices');
             if (r.error && r.error.code === 'NOT_FOUND') {
-              // 该宿主没有注册该路由
+              // MarginNote 没有注册该接口
             }
   /notes/batch-get:
     post:
@@ -601,7 +601,7 @@ paths:
       summary: 批量获取卡片
       operationId: postNotesBatchGet
       description: |
-        按 id 一次读多张卡：标题与预览、文本项、二进制项、样式档位、标签、插件存下来的字段、
+        按 id 一次读多张卡：标题与预览、文本项、二进制项、样式级别、标签、插件存下来的字段、
         以及内容的来源。
 
         插件状态记在脑图的卡片上。从文档上摘下来的记录在文档笔记本里，两者不是同一个对象，
@@ -619,7 +619,7 @@ paths:
                 $ref: '#/components/schemas/BatchGetResponse'
               examples:
                 recorded:
-                  summary: 真机实录（宿主 0.61，2026-09-18 录制）；实录只保留开头部分
+                  summary: 真机实录（MarginNote 0.61，2026-09-18 录制）；实录只保留开头部分
                   value: {
                       "items": [
                         {
@@ -721,18 +721,18 @@ paths:
       description: |
         把插件自己的数据写到卡片上，单次上限为 200 张卡与 50 个键。值写 `null` 表示删掉该键。
 
-        面板侧会把 `addon` 改成该面板所属插件的 owner，页面填写的值不被采纳，因此写不到别的
+        面板会把 `addon` 改成该面板所属插件的 owner，页面填写的值不被采纳，因此写不到别的
         插件名下。`confirm` 由 MarginNote 补上。
 
-        回执里的 `persisted` 是独立回读核对一致之后才给的，据此判断写入是否成功。批量写入不经过
-        事务，需要在同一步里改动多项时用 `POST /notes/{noteid}/edits`。
+        响应里的 `persisted` 是独立重新读取核对一致之后才给的，据此判断写入是否成功。批量写入不经过
+        提交，需要在同一步里改动多项时用 `POST /notes/{noteid}/edits`。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:693,900-901
         - output/doc/插件网页面板_接口文档_2026-09-17.md:161-162
         - samples/reading-vocabulary-0.13.1/plugins/mn.vocab/list2.js:152
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -768,7 +768,7 @@ paths:
           source: |
             await mn.api('/notes/addon-values', {
               method: 'POST',
-              // addon 由宿主设为本面板的 owner，此处填写不生效
+              // addon 由 MarginNote 设为本面板的 owner，此处填写不生效
               body: { noteIds: [noteid], values: { status: 'done' }, confirm: true }
             });
   /notes/hashtags:
@@ -782,7 +782,7 @@ paths:
         每个标签写一条完整的叶子路径，层级之间用 `/` 分隔。
 
         摘标签时可以带上 `includeDescendants`，把下层的标签一并摘掉；加与替换不接受该项。
-        标签不能借改正文的途径写入，正文里出现标签控制行会被拒，并给出应当使用的端点。
+        标签不能借改正文的途径写入，正文里出现标签控制行会被拒，并给出应当使用的接口。
 
         一次提交多组互不相同的操作时用 `patches`。
       x-mn-source:
@@ -792,7 +792,7 @@ paths:
         - samples/card-practice-0.5.8/plugins/mn.cardpractice/ports.js:78-83
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -818,7 +818,7 @@ paths:
                           type: string
                   patches:
                     type: array
-                    description: 批量形态下逐组给出的回执。
+                    description: 批量形态下逐组给出的响应。
                     items:
                       type: object
                       additionalProperties: true
@@ -878,22 +878,21 @@ paths:
     post:
       tags:
         - 卡片与摘录
-      summary: 更新卡片样式档位
+      summary: 更新卡片样式级别
       operationId: postNotesMetadata
       description: |
-        改摘录的颜色与样式档位，单次上限为 200 张卡。颜色档位取 0 到 15，每一档的实际颜色随
+        改摘录的颜色与样式级别，单次上限为 200 张卡。颜色编号取 0 到 15，每一个编号的实际颜色随
         学习集色板变化，用 `GET /study-sets/{topicid}/note-palette` 读当前这套色板。
-        样式档位取 -1 到 2，管的是来源摘录的样式，不是脑图卡片本身的底色。
+        样式级别取 -1 到 2，管的是来源摘录的样式，不是脑图卡片本身的底色。
 
-        回执里的 `persisted` 是独立回读核对一致之后才给的。落盘之后回读不一致会返回 `500`，
+        响应里的 `persisted` 是独立重新读取核对一致之后才给的。写入磁盘之后重新读取不一致会返回 `500`，
         该情形不得视为写入成功。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:968-977
         - capabilities.json 的 noteMetadata 分组
-        - 插件端点字段取证-2026-10-06.md:76
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -926,10 +925,10 @@ paths:
                   confirm: true
       x-codeSamples:
         - lang: javascript
-          label: 更新颜色档位
+          label: 更新颜色编号
           source: |
             const palette = await mn.api('/study-sets/' + topicid + '/note-palette');
-            // 先读色板，colorIndex 是这套色板里的档位
+            // 先读色板，colorIndex 是这套色板里的编号
             await mn.api('/notes/metadata', {
               method: 'POST',
               body: { noteIds: [noteid], patch: { colorIndex: 3 }, confirm: true }
@@ -946,14 +945,14 @@ paths:
         `reference` 建立与来源保持同步的引用卡，改一处两边一起变；`clone` 建立各自独立的卡片，
         并重写分支内部的链接。
 
-        该端点的 `confirm` 排在业务校验之后，不带 `confirm` 时先完成整套只读校验，再返回 `422`，
-        回执里带上已经验明的事实。该路径可以当作一次预演。
+        该接口的 `confirm` 排在业务校验之后，不带 `confirm` 时先完成整套只读校验，再返回 `422`，
+        响应里带上已经查证的事实。该路径可以当作一次预演。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1534-1547,1594-1613
         - capabilities.json 的 noteCopy 分组
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -1006,7 +1005,7 @@ paths:
         - lang: javascript
           label: 先预演再执行
           source: |
-            // 不带 confirm 的一次等于预演：完成只读校验后返回 422，回执里带已验明的事实
+            // 不带 confirm 的一次等于预演：完成只读校验后返回 422，响应里带已查证的事实
             const dry = await mn.api('/notes/copy', {
               method: 'POST',
               body: { noteIds: [rootNoteId], targetParentNoteId: parentNoteId, mode: 'clone' }
@@ -1026,16 +1025,15 @@ paths:
       description: |
         在学习集内部换父卡，不改内容、不删卡。单次合计上限为 50 张。
 
-        批量形态用 `moves`，一次提交多组。该端点的 `confirm` 排在业务校验之前，不带时只回
+        批量形态用 `moves`，一次提交多组。该接口的 `confirm` 排在业务校验之前，不带时只回
         该错误码。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1524-1533,1611-1613
-        - 插件端点字段取证-2026-10-06.md:99
       x-mn-todo:
-        - 回执形状没有依据。
+        - 响应结构没有依据。
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -1045,7 +1043,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，待实测补入
+                    TODO: 本接口的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
@@ -1090,7 +1088,7 @@ paths:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1583-1588
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -1156,17 +1154,17 @@ paths:
         把界面切到该卡，并连带切到该卡所属的学习集、卡组或文档。同一张卡被多个学习集引用时，
         用 `topicid` 指定打开的学习集。
 
-        界面切换是异步发生的。该动作本身就是结果，没有需要等待的回执。
+        界面切换是异步发生的。该动作本身就是结果，没有需要等待的响应。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1041-1042,1057-1058
         - samples/reading-vocabulary-0.13.1/plugins/mn.vocab/list2.js:158
       x-mn-todo:
-        - 回执形状没有依据。
+        - 响应结构没有依据。
       parameters:
         - $ref: '#/components/parameters/Noteid'
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -1176,7 +1174,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，待实测补入
+                    TODO: 本接口的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
@@ -1210,16 +1208,16 @@ paths:
         用一把摘录工具或一个划线快捷项，在文档的指定位置摘一条。摘录走模板配置的流程，
         摘出来的卡带上工具配置好的标签、颜色与 AI 归属。
 
-        工具序号取自 `GET /immersive/template` 回包里 `excerptTools.tools[].index`，
+        工具序号取自 `GET /immersive/template` 响应里 `excerptTools.tools[].index`，
         与 `shortcutIndex` 二者取一。
 
-        回执里有两个 id：`noteid` 指向文档笔记本里的记录，`cardNoteId` 指向脑图上的卡片。
+        响应里有两个 id：`noteid` 指向文档笔记本里的记录，`cardNoteId` 指向脑图上的卡片。
         插件状态记在后者上。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1145-1168
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -1300,14 +1298,14 @@ paths:
         返回该卡当前菜单上可用的插件命令，以及插件存在该卡上的字段。
 
         命令要出现在菜单上，需要以下各处齐备：插件清单里声明了 `cardCommands`，模板把该命令摆进
-        某张菜单，页面上监听了卡片命令事件。命中的命令随卡的状态变化，判断条件由宿主在菜单
+        某张菜单，页面上监听了卡片命令事件。匹配的命令随卡的状态变化，判断条件由 MarginNote 在菜单
         弹出时判定。
 
         `reason` 说明本次没有命令可用的原因。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1132-1136,1158
       x-mn-todo:
-        - 回执字段取自规程正文的散文描述，未见样本。
+        - 响应字段取自规程正文的文字描述，未见样本。
       parameters:
         - $ref: '#/components/parameters/Noteid'
       responses:
@@ -1369,7 +1367,7 @@ paths:
         打开该题卡的图片底图批注稿，也就是作答纸，或者继续已有的一份。
 
         该操作要带 `expectedRevision`，取自 `GET /notes/{noteid}/comments` 或
-        `POST /notes/batch-get` 回包里的 `commentsRevision`。带 `commentId` 表示继续该份，
+        `POST /notes/batch-get` 响应里的 `commentsRevision`。带 `commentId` 表示继续该份，
         不带表示新建。`advance` 等同于在编辑器里按下主按钮。
 
         编辑器占用期间该卡会被锁定。这道题不属于当前学习集时返回 `PRACTICE_TOPIC_CHANGED`，
@@ -1383,7 +1381,7 @@ paths:
         - $ref: '#/components/parameters/Noteid'
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -1468,7 +1466,7 @@ paths:
       summary: 列出卡片留白带
       operationId: getNotesNoteidBlankBands
       description: |
-        按追加顺序返回该卡下面的留白带，每一项给出该条带在文档里的落点、是否折叠、高度、
+        按追加顺序返回该卡下面的留白带，每一项给出该条带在文档里的位置、是否折叠、高度、
         是否带笔迹，以及是否正在使用。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1493-1494
@@ -1540,17 +1538,17 @@ paths:
       summary: 创建留白带
       operationId: postNotesNoteidBlankBands
       description: |
-        在该卡下面追加一条留白带。宿主无法建立时返回 `409`，回执里带一个稳定的原因码，
+        在该卡下面追加一条留白带。MarginNote 无法建立时返回 `409`，响应里带一个稳定的原因码，
         例如没有选区、插入被拒、物理保存失败。该情形不得视为已经建立。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1495-1497
       x-mn-todo:
-        - 成功回执的形状没有依据。
+        - 成功响应的结构没有依据。
       parameters:
         - $ref: '#/components/parameters/Noteid'
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -1560,7 +1558,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点成功时的回执形状没有依据，待实测补入
+                    TODO: 本接口成功时的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
         '409':
@@ -1600,12 +1598,12 @@ paths:
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1498-1500
       x-mn-todo:
-        - 回执形状没有依据。
+        - 响应结构没有依据。
       parameters:
         - $ref: '#/components/parameters/BlankId'
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -1615,7 +1613,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，待实测补入
+                    TODO: 本接口的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
@@ -1652,12 +1650,12 @@ paths:
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1501
       x-mn-todo:
-        - 请求体与回执形状都没有依据。
+        - 请求体与响应结构都没有依据。
       parameters:
         - $ref: '#/components/parameters/BlankId'
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -1667,7 +1665,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，待实测补入
+                    TODO: 本接口的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
         '409':
@@ -1724,7 +1722,7 @@ paths:
           label: 获取批注与版本号
           source: |
             const r = await mn.api('/notes/' + noteid + '/comments');
-            const ticket = r.revision;  // 改写与删除要用的门票
+            const ticket = r.revision;  // 改写与删除要用的版本号
             mn.log(r.comments.map(c => c.index + ': ' + c.text).join('\n'));
     post:
       tags:
@@ -1735,7 +1733,7 @@ paths:
         追加一条批注。正文整条写成一个指向别处的应用内链接时，该条批注成为真正的双向链接。
 
         `format` 只在新增时接受，改写现成的批注时带上该参数会被判非法。样式只有在按富文本写入时有效，
-        宿主移除样式时回执里的 `styled` 为 `false`。
+        MarginNote 移除样式时响应里的 `styled` 为 `false`。
 
         `field` 与 `fieldLabel` 用来把该条批注标成某个字段的值，便于同一张卡上放多组结构化内容。
       x-mn-source:
@@ -1745,7 +1743,7 @@ paths:
         - $ref: '#/components/parameters/Noteid'
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -1757,7 +1755,7 @@ paths:
                     type: string
                   styled:
                     type: boolean
-                    description: 样式是否被保留。为 `false` 表示宿主移除了样式。
+                    description: 样式是否被保留。为 `false` 表示 MarginNote 移除了样式。
               examples:
                 assembled:
                   summary: 依据规程正文写出，未经实测
@@ -1811,15 +1809,14 @@ paths:
         `expectedPrefix` 是该条批注当前内容的前 32 个字，读完到写之间内容已变则返回 `409 COMMENT_CHANGED`。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1507,1509-1511
-        - 插件端点字段取证-2026-10-06.md:63
       x-mn-todo:
-        - 回执形状没有依据。
+        - 响应结构没有依据。
       parameters:
         - $ref: '#/components/parameters/Noteid'
         - $ref: '#/components/parameters/CommentIndex'
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -1829,7 +1826,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，待实测补入
+                    TODO: 本接口的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
         '409':
@@ -1877,13 +1874,13 @@ paths:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1508
         - samples/reading-vocabulary-0.13.1/plugins/mn.vocab/write2.js:163
       x-mn-todo:
-        - 回执形状没有依据。
+        - 响应结构没有依据。
       parameters:
         - $ref: '#/components/parameters/Noteid'
         - $ref: '#/components/parameters/CommentIndex'
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -1893,7 +1890,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，待实测补入
+                    TODO: 本接口的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
         '409':
@@ -1924,19 +1921,19 @@ paths:
     post:
       tags:
         - 卡片与摘录
-      summary: 提交卡片事务
+      summary: 一次提交多步卡片改动
       operationId: postNotesNoteidEdits
       description: |
-        一个动作要改动多项时使用该端点：改标题、加批注、删批注、摘标签、记插件字段，写在一串里一次
+        一个动作要改动多项时使用该接口：改标题、加批注、删批注、摘标签、记插件字段，写在一次提交里
         提交，在撤销栈上只占一步。
 
-        宿主先按顺序模拟整串，任何一步不通过，整串都不写入。整串最多 32 步。删批注必须排在
-        摘标签之前，否则返回 `422 INVALID_ORDER`。写入之后宿主回读核对，不一致就把改动过的卡
+        MarginNote 先按顺序模拟整批操作，任何一步不通过，整批操作都不写入。一批最多 32 步。删批注必须排在
+        摘标签之前，否则返回 `422 INVALID_ORDER`。写入之后 MarginNote 重新读取核对，不一致就把改动过的卡
         整体恢复并返回 `500`。
 
         `syncReview` 打开时，写完照摘录那一刻的自动入组规则把该卡补进复习卡组，与本次写入同一步撤销。
 
-        这是插件唯一的原子多步写入口。老宿主没有注册该路由时返回 `404`，白名单未放行时返回 `403`，
+        这是插件唯一的原子多步写入口。旧版 MarginNote 没有注册该接口时返回 `404`，白名单未放行时返回 `403`，
         两者都可以用作能力探测。
       x-mn-source:
         - output/doc/插件网页面板_接口文档_2026-09-17.md:84-101
@@ -1947,7 +1944,7 @@ paths:
         - $ref: '#/components/parameters/Noteid'
       responses:
         '200':
-          description: 事务回执。字段依据 SDK 手写接口文档列出。
+          description: 提交响应。字段依据 SDK 手写接口文档列出。
           content:
             application/json:
               schema:
@@ -2013,7 +2010,7 @@ paths:
                   syncReview: false
       x-codeSamples:
         - lang: javascript
-          label: 用一次事务写完一张卡
+          label: 用一次提交写完一张卡
           source: |
             const r = await mn.api('/notes/' + noteid + '/edits', {
               method: 'POST',
@@ -2024,7 +2021,7 @@ paths:
                   { op: 'setTitle', text: 'photosynthesis', expectedPrefix: 'photo' },
                   { op: 'appendComment', text: '光合作用：植物把光能转成化学能的过程。' },
                   { op: 'removeHashtags', hashtags: ['#VocabPending'] },
-                  // addon 由宿主设为本面板的 owner
+                  // addon 由 MarginNote 设为本面板的 owner
                   { op: 'setAddonValues', values: { status: 'done' } }
                 ],
                 confirm: true,
@@ -2033,9 +2030,9 @@ paths:
             });
             if (r.error) mn.log(r.error.code);
 
-            // 探测该宿主是否注册了该端点
+            // 探测 MarginNote 是否注册了该接口
             if (r.error && (r.error.code === 'NOT_FOUND' || r.error.code === 'IN_PROCESS_NOT_ALLOWED')) {
-              // 老宿主上改用逐条写入的端点
+              // 旧版 MarginNote 上改用逐条写入的接口
             }
   /notes/{noteid}/fold-into-sub-map:
     post:
@@ -2050,12 +2047,12 @@ paths:
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:633-636
       x-mn-todo:
-        - 回执形状没有依据。
+        - 响应结构没有依据。
       parameters:
         - $ref: '#/components/parameters/Noteid'
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -2065,7 +2062,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，待实测补入
+                    TODO: 本接口的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
@@ -2108,17 +2105,17 @@ paths:
         把子卡的内容并进该卡，等同于卡片菜单上的合并分支。默认只并直接子卡，
         带 `recursive` 时连整棵子树一起并。
 
-        并非所有子卡都会被并入：拒绝接收的卡原样留在树上，数量由回执里的 `notMergedCount` 给出；
+        并非所有子卡都会被并入：拒绝接收的卡原样留在树上，数量由响应里的 `notMergedCount` 给出；
         摘要卡与子脑图根卡会被自动跳过，原因在 `skipped` 里。
 
-        回执里的 `willMerge` 是本次计划并入的卡，可以据此先行检查再决定是否提交。
+        响应里的 `willMerge` 是本次计划并入的卡，可以据此先行检查再决定是否提交。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1011-1024,1611-1613
       parameters:
         - $ref: '#/components/parameters/Noteid'
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -2198,7 +2195,7 @@ paths:
         - $ref: '#/components/parameters/Noteid'
       responses:
         '200':
-          description: 回执。字段依据样例代码的取用方式与错误契约列出。
+          description: 响应。字段依据样例代码的取用方式与错误契约列出。
           content:
             application/json:
               schema:
@@ -2301,7 +2298,7 @@ paths:
       description: |
         把标题、正文、摘录图、插图与手写合成一张完整的卡片长图或一份 PDF。
 
-        返回的是图片或 PDF 本身，不是 JSON，因此该端点要用 `fetch` 原语读取。
+        返回的是图片或 PDF 本身，不是 JSON，因此该接口要用 `fetch` 原语读取。
         像素数超过上限时会被明确拒绝。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:726-728
@@ -2328,7 +2325,7 @@ paths:
         - lang: javascript
           label: 改用 fetch 原语获取长图
           source: |
-            // 该端点返回的不是 JSON，mn.api 会失败，用 fetch 原语
+            // 该接口返回的不是 JSON，mn.api 会失败，用 fetch 原语
             const r = await fetch('/bridge/v1/notes/' + noteid + '/render?format=png&width=880');
             const blob = await r.blob();
             const url = URL.createObjectURL(blob);
@@ -2340,21 +2337,20 @@ paths:
       summary: 更新卡片正文
       operationId: postNotesNoteidText
       description: |
-        改该卡的正文。留白实体的正文也用该端点写入，目标传 `kind` 为留白的那一项的 id。
+        改该卡的正文。留白实体的正文也用该接口写入，目标传 `kind` 为留白的那一项的 id。
 
         `expectedPrefix` 是当前正文的前 32 个字，为空传空串。内容已变时返回 `409`。
 
-        不要借该端点写入标签。正文里出现标签控制行会被 `422 HASHTAG_ROUTE_REQUIRED` 拒绝，
-        回执里给出应当使用的端点。改正文之前先确认该卡是否为摘录卡，判据看 `texts[].excerpt`
+        不要借该接口写入标签。正文里出现标签控制行会被 `422 HASHTAG_ROUTE_REQUIRED` 拒绝，
+        响应里给出应当使用的接口。改正文之前先确认该卡是否为摘录卡，判据看 `texts[].excerpt`
         或内容来源里的 `hasExcerpt`，不看页码。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:704,998-1002,1512-1521
-        - 插件端点字段取证-2026-10-06.md:70-72
       parameters:
         - $ref: '#/components/parameters/Noteid'
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -2364,7 +2360,7 @@ paths:
                     type: boolean
                   groupCachesUpdated:
                     type: number
-                description: 宿主显示缓存更新的回执。
+                description: MarginNote 显示缓存更新的响应。
               examples:
                 assembled:
                   summary: 依据规程正文写出，未经实测
@@ -2417,18 +2413,18 @@ paths:
 
         `expectedPrefix` 是当前标题的前 32 个字，为空传空串。内容已变时返回 `409`。
 
-        该端点与改正文走同一个处理器，缺字段时返回的码都是 `INVALID_INPUT`，分辨所缺的项
+        该接口与改正文走同一个处理器，缺字段时返回的码都是 `INVALID_INPUT`，分辨所缺的项
         看 `message`。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:821,1512-1513
         - samples/reading-vocabulary-0.13.1/plugins/mn.vocab/write2.js:75-83
       x-mn-todo:
-        - 单独的回执形状没有依据，与改正文走同一个处理器。
+        - 单独的响应结构没有依据，与改正文走同一个处理器。
       parameters:
         - $ref: '#/components/parameters/Noteid'
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -2438,7 +2434,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，待实测补入
+                    TODO: 本接口的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
         '409':
@@ -2477,9 +2473,9 @@ paths:
       operationId: getNotesNoteidContentContentId
       description: |
         按 `contentId` 取回卡片上某一项二进制内容的原始字节。`contentId` 取自
-        `POST /notes/batch-get` 回包里 `items[].parts[].contentId`。
+        `POST /notes/batch-get` 响应里 `items[].parts[].contentId`。
 
-        返回的是内容本身，不是 JSON，因此该端点要用 `fetch` 原语读取。
+        返回的是内容本身，不是 JSON，因此该接口要用 `fetch` 原语读取。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:721-725
         - samples/card-practice-0.5.8/plugins/mn.cardpractice/model.js:195
@@ -2562,14 +2558,14 @@ paths:
       summary: 获取手写能力清单
       operationId: getWritingCapabilities
       description: |
-        调用手写会话的其他路由之前先读该端点，确认宿主支持的子能力。
+        调用手写会话的其他路由之前先读该接口，确认 MarginNote 支持的子能力。
 
-        该端点给出的是能力清单，不是可写许可。清单里某项开关为假时，对应的那一类操作此刻不可用。
+        该接口给出的是能力清单，不是可写许可。清单里某项开关为假时，对应的那一类操作此刻不可用。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1470,1478
         - capabilities.json 的 writing 分组
       x-mn-todo:
-        - 单独的回执形状没有依据，可读的子项见 `GET /capabilities` 里的手写会话分组。
+        - 单独的响应结构没有依据，可读的子项见 `GET /capabilities` 里的手写会话分组。
       responses:
         '200':
           description: 能力清单。可读的子项与 `GET /capabilities` 的手写会话分组同形。
@@ -2582,7 +2578,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，可读的子项见 GET /capabilities 的手写会话分组
+                    TODO: 本接口的响应结构没有依据，可读的子项见 GET /capabilities 的手写会话分组
         '403':
           $ref: '#/components/responses/Forbidden'
       x-codeSamples:
@@ -2600,12 +2596,12 @@ paths:
       operationId: postWritingContext
       description: |
         返回该面板所对的窗口与学习集，以及当前可见的各个工作面。该结果是观察所得，不构成保存或切题的许可，
-        因此回执里的 `readOnly` 为真、`mutationAuthority` 为假。
+        因此响应里的 `readOnly` 为真、`mutationAuthority` 为假。
 
-        面板侧可以直接传空对象，窗口与身份由宿主注入，只能看到本面板所在的窗口。
+        面板可以直接传空对象，窗口与身份由 MarginNote 注入，只能看到本面板所在的窗口。
         不要自行传入窗口身份以指向其他窗口。窗口不在、学习集已换、窗口已关，都会拒绝。
 
-        工作面里可能出现内部留白页，那不是 PDF 页序，不要传给按页取内容的端点。
+        工作面里可能出现内部留白页，那不是 PDF 页序，不要传给按页取内容的接口。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1435-1447
         - samples/card-practice-0.5.8/plugins/mn.cardpractice/ports.js:58
@@ -2644,13 +2640,13 @@ paths:
               $ref: '#/components/schemas/WritingContextRequest'
             examples:
               panelSide:
-                summary: 面板侧直接传空对象
+                summary: 面板直接传空对象
                 value: {}
       x-codeSamples:
         - lang: javascript
           label: 获取当前窗口与学习集
           source: |
-            // 面板侧不需要填窗口，宿主自己注入
+            // 不需要填窗口，MarginNote 会自己注入
             const ctx = await mn.api('/writing/context', { method: 'POST', body: {} });
             if (ctx.error) { mn.log(ctx.error.code); return; }
             const topicid = ctx.window.topicid;
@@ -2666,15 +2662,15 @@ paths:
         留白与焦点互斥，不能写在同一份请求里。要限制层用 `layerIds`：不传查全部层，
         传一个空串查默认层，传空数组或超过 32 个会被拒。
 
-        该端点不创建、不认领、不折叠，回执里没有未保存的画布，记录数也不等于笔划数。
+        该接口不创建、不认领、不折叠，响应里没有未保存的画布，记录数也不等于笔划数。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1481-1489
         - capabilities.json 的 writing 分组
       x-mn-todo:
-        - 回执的内部字段没有依据。
+        - 响应的内部字段没有依据。
       responses:
         '200':
-          description: 存储身份快照。内部字段没有依据，回执形状待补。
+          description: 存储身份快照。内部字段没有依据，响应结构待补。
           content:
             application/json:
               schema:
@@ -2682,18 +2678,18 @@ paths:
                 properties:
                   ready:
                     type: boolean
-                    description: 为 `false` 时不得视为可写的回执。
+                    description: 为 `false` 时不得视为可写的响应。
                   hasVisibleContent:
                     type: boolean
                   projectionFingerprint:
                     type: string
-                    description: 只供水印对账使用，不是存储版本，也不能作为改写的凭据。
+                    description: 只供水印核对使用，不是存储版本，也不能作为改写的依据。
                 additionalProperties: true
               examples:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点回执的内部字段没有依据，待实测补入
+                    TODO: 本接口响应的内部字段没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
       requestBody:
@@ -2741,7 +2737,7 @@ paths:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1479-1480
         - capabilities.json 的 writing 分组
       x-mn-todo:
-        - 回执的完整字段没有依据。
+        - 响应的完整字段没有依据。
       responses:
         '200':
           description: 来源候选与存储身份。完整字段没有依据。
@@ -2754,7 +2750,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点回执的完整字段没有依据，待实测补入
+                    TODO: 本接口响应的完整字段没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
       requestBody:
@@ -2785,17 +2781,17 @@ paths:
       summary: 查询手写层租约
       operationId: postWritingLayerLeases
       description: |
-        只读诊断：返回未收尾的临时手写层占用。上一次操作失联时先读该端点，再决定是否走恢复流程。
+        只读诊断：返回未收尾的临时手写层占用。上一次操作失联时先读该接口，再决定是否走恢复流程。
 
-        `POST /writing/layer-compact` 与该端点同属受管理手写层分组，该组的开关当前是关着的。
+        `POST /writing/layer-compact` 与该接口同属手写层分组，该组的开关当前是关着的。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1460,1465-1466
         - capabilities.json 的 writing 分组
       x-mn-todo:
-        - 请求体与回执形状都没有依据。
+        - 请求体与响应结构都没有依据。
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -2805,7 +2801,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执形状没有依据，待实测补入
+                    TODO: 本接口的响应结构没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
       requestBody:
@@ -2828,21 +2824,21 @@ paths:
     post:
       tags:
         - 手写会话
-      summary: 压缩受管理手写层
+      summary: 压缩手写层
       operationId: postWritingLayerCompact
       description: |
-        该端点的用途没有依据可查。该端点出现在网页面板的白名单与 2026-09-21 的路由目录里，
-        运行规程全文没有提到过，也没有样例调用过。受管理手写层分组的开关当前是关着的。
+        该接口的用途没有依据可查。该接口出现在网页面板的白名单与 2026-09-21 的路由目录里，
+        运行规程全文没有提到过，也没有样例调用过。手写层分组的开关当前是关着的。
 
-        收录该端点是为了与白名单一一对应。调用之前先确认该宿主上是否可用。
+        收录该接口是为了与白名单一一对应。调用之前先确认 MarginNote 上是否可用。
       x-mn-source:
         - capabilities.json 的 writing 分组
         - output/doc/SDK路由参考_2026-09-21.md:57
       x-mn-todo:
-        - 用途、请求体、回执形状与错误码都没有依据。
+        - 用途、请求体、响应结构与错误码都没有依据。
       responses:
         '200':
-          description: 回执形状没有依据。
+          description: 响应结构没有依据。
           content:
             application/json:
               schema:
@@ -2852,7 +2848,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的用途与回执形状都没有依据，待实测补入
+                    TODO: 本接口的用途与响应结构都没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
       requestBody:
@@ -2861,7 +2857,7 @@ paths:
           application/json:
             schema:
               type: object
-              description: 字段待补，现有材料里查不到该端点的请求体结构。
+              description: 字段待补，现有材料里查不到该接口的请求体结构。
               additionalProperties: true
             examples:
               placeholder:
@@ -2870,7 +2866,7 @@ paths:
                   TODO: 请求体字段待补
       x-codeSamples:
         - lang: javascript
-          label: 探测该端点是否存在
+          label: 探测该接口是否存在
           source: |
             const r = await mn.api('/writing/layer-compact', { method: 'POST', body: {} });
             if (r.error) mn.log(r.error.code, r.error.message);
@@ -2881,13 +2877,13 @@ paths:
       summary: 保存焦点画布的笔迹
       operationId: postWritingPencilCommit
       description: |
-        把当前焦点根画布上的笔迹存成快照。该端点不是整份编辑器的落地操作，也不切题。
+        把当前焦点根画布上的笔迹存成快照。该接口不是整份编辑器的落地操作，也不切题。
 
-        该端点立即返回受理，`state` 为 `pending`。受理不是完成，结果要用 `POST /writing/pencil-result`
-        拿同一个 `requestId` 去查。
+        该接口立即返回受理，`state` 为 `pending`。受理不是完成，结果要用 `POST /writing/pencil-result`
+        用同一个 `requestId` 去查。
 
-        同一个标识配同一个请求只返回原结果，不会重做；不同的目标复用同一个标识会返回冲突。
-        每个窗口同时只准有一笔未完成的操作。宿主重启之后这些记录会消失，因此查不到不等于没保存过，
+        同一个标识配同一个请求只返回原结果，不会重做；不同的目标共用同一个标识会返回冲突。
+        每个窗口同时只准有一笔未完成的操作。MarginNote 重启之后这些记录会消失，因此查不到不等于没保存过，
         要独立读回确认。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1403-1417
@@ -2931,7 +2927,7 @@ paths:
                   confirm: true
       x-codeSamples:
         - lang: javascript
-          label: 提交后再到结果端点查询
+          label: 提交后再到结果接口查询
           source: |
             const requestId = crypto.randomUUID();
             const ack = await mn.api('/writing/pencil-commit', {
@@ -3037,14 +3033,14 @@ paths:
         `settled` 为真只说明返回调已返回，还要分别看 `outcome`、`persistedSnapshotVerified`
         与 `snapshotCurrent`。`snapshotCurrent` 只描述返回调返回时的状态。
 
-        受理之后才出现的失败码走回执里的 `code`，不走错误信封里的 `code`。
+        受理之后才出现的失败码走响应里的 `code`，不走错误对象里的 `code`。
         查不到记录时返回 `404`，即表示本进程里没有该笔，不等于没有保存过。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1408-1412,1421-1424
         - output/doc/SDK错误契约_写入侧_2026-09-21.md:148-155
       responses:
         '200':
-          description: 结果。受理之后的失败码在回执的 `code` 上。
+          description: 结果。受理之后的失败码在响应的 `code` 上。
           content:
             application/json:
               schema:
@@ -3083,7 +3079,7 @@ paths:
               body: { requestId }
             });
             if (r.error && r.error.code === 'NOT_FOUND') {
-              // 本进程里没有该笔，宿主重启过；不要视为没有保存
+              // 本进程里没有该笔，MarginNote 重启过；不要视为没有保存
             }
             if (r.layerLeaseUnresolved) {
               // 有租约悬留，结果不确定，不要自动重试
@@ -3100,7 +3096,7 @@ paths:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1470-1471
         - capabilities.json 的 writing 分组
       x-mn-todo:
-        - 回执的内部字段没有依据；保存端点的回执给出的是 `plan.revision`。
+        - 响应的内部字段没有依据；保存接口的响应给出的是 `plan.revision`。
       responses:
         '200':
           description: 准备清单。
@@ -3126,7 +3122,7 @@ paths:
               $ref: '#/components/schemas/WindowTopicRequest'
             examples:
               panelSide:
-                summary: 面板侧直接传空对象
+                summary: 面板直接传空对象
                 value: {}
       x-codeSamples:
         - lang: javascript
@@ -3141,20 +3137,20 @@ paths:
       summary: 保存练习准备选择
       operationId: postWritingPlanSave
       description: |
-        保存这本学习集的练习准备选择。该端点只记录本次意图，不展开留白，不切层，不导航，
+        保存这本学习集的练习准备选择。该接口只记录本次意图，不展开留白，不切层，不导航，
         也不修改学习集。
 
         一次最多 20 道题，题目不能重复。传空数组表示清空准备选择，不会删掉题目或笔迹。
 
         要带 `expectedRevision`，与读回来的 `plan.revision` 对照。同一个标识换内容，
-        或者拿旧版本号发新请求，都会返回冲突。
+        或者使用旧版本号发新请求，都会返回冲突。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1462-1477
         - capabilities.json 的 writing 分组
         - output/doc/SDK错误契约_写入侧_2026-09-21.md:92-94,139-140
       responses:
         '200':
-          description: 回执。字段依据规程正文列出。
+          description: 响应。字段依据规程正文列出。
           content:
             application/json:
               schema:
@@ -3173,7 +3169,7 @@ paths:
                     properties:
                       revision:
                         type: integer
-                        description: 回读时的最新版本号，与请求里带的不一定相等。
+                        description: 重新读取时的最新版本号，与请求里带的不一定相等。
                   started:
                     type: boolean
                   ready:
@@ -3251,7 +3247,7 @@ paths:
         读这台设备上的练习会话记录：每一趟、每次尝试、每次浏览，以及暂停与历史。
         没有记录时返回一个空数组，不算失败。
 
-        记录里的状态是上一次事件留下的事实，不构成此刻可以写入的凭据。
+        记录里的状态是上一次事件留下的事实，不构成此刻可以写入的依据。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1462
         - capabilities.json 的 writing 分组
@@ -3267,7 +3263,7 @@ paths:
                 $ref: '#/components/schemas/WritingSessionReadResponse'
               examples:
                 empty:
-                  summary: 没有记录时的形状，依据规程正文
+                  summary: 没有记录时的结构，依据规程正文
                   value:
                     runs: []
                     ready: false
@@ -3282,7 +3278,7 @@ paths:
               $ref: '#/components/schemas/WindowTopicRequest'
             examples:
               panelSide:
-                summary: 面板侧直接传空对象
+                summary: 面板直接传空对象
                 value: {}
       x-codeSamples:
         - lang: javascript
@@ -3362,14 +3358,14 @@ paths:
       description: |
         读整个学习集的脑图结构、标题与逻辑属性。
 
-        节点是扁平数组，父子关系靠每一项的 `parent` 自己拼，没有嵌套的下层数组。
+        节点是扁平数组，父子关系靠每一项的 `parent` 自行组合，没有嵌套的下层数组。
 
         要按文档顺序排列时带 `sort=document`。不要自行按页码排序：摘录与摘题产出的卡自身没有
-        页码，页码在该题的摘录子笔记上。带该参数时由宿主排序，判据与界面上的按页码排序逐字一致，
+        页码，页码在该题的摘录子笔记上。带该参数时由 MarginNote 排序，判据与界面上的按页码排序逐字一致，
         并给每个节点补上 `docPage` 与 `docBookmd5`。排序在切片之前对整条序列做，跨页顺序因此是对的。
 
-        翻页用 `limit` 与 `cursor`，回执里的 `nextCursor` 为 `null` 表示已到末尾。
-        撞上遍历硬顶时 `walkLimitReached` 为真，为真时才表示读到末页也取不全。
+        翻页用 `limit` 与 `cursor`，响应里的 `nextCursor` 为 `null` 表示已到末尾。
+        达到遍历上限时 `walkLimitReached` 为真，为真时才表示读到末页也取不全。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:627-678
         - capabilities.json 的 noteTitles 分组
@@ -3384,14 +3380,14 @@ paths:
         - $ref: '#/components/parameters/WithNotes'
       responses:
         '200':
-          description: 脑图。节点是扁平数组，父子靠 `parent` 拼。
+          description: 脑图。节点是扁平数组，父子关系靠 `parent` 字段表示。
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TreeResponse'
               examples:
                 recordedPlain:
-                  summary: 真机实录（宿主 0.61，2026-09-18 录制）；实录只保留开头部分
+                  summary: 真机实录（MarginNote 0.61，2026-09-18 录制）；实录只保留开头部分
                   value: {
                       "topicid": "77012CA0-48E8-4D29-B5F5-1EEA927AE086",
                       "bridgeApiVersion": "0.61",
@@ -3563,12 +3559,12 @@ paths:
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:739
       x-mn-todo:
-        - 回执字段没有依据。
+        - 响应字段没有依据。
       parameters:
         - $ref: '#/components/parameters/Topicid'
       responses:
         '200':
-          description: 回执字段没有依据。
+          description: 响应字段没有依据。
           content:
             application/json:
               schema:
@@ -3578,7 +3574,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执字段没有依据，待实测补入
+                    TODO: 本接口的响应字段没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
       x-codeSamples:
@@ -3594,10 +3590,10 @@ paths:
       summary: 列出学习集文档
       operationId: getStudySetsTopicidDocuments
       description: |
-        列出该学习集里的文档。没有列出全库文档的端点，跨学习集查找文档要用搜索端点。
+        列出该学习集里的文档。没有列出全库文档的接口，跨学习集查找文档要用搜索接口。
 
         每一项给出内容标识、标题、可用状态。`sourceState` 说明文件本身是否还在，
-        `unavailableReason` 给出获获获获获取不到时的原因。
+        `unavailableReason` 给出获取不到时的原因。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:508,733,929,1043-1046
         - output/tools/sdk/fixtures/formula_sample.json
@@ -3612,7 +3608,7 @@ paths:
                 $ref: '#/components/schemas/StudySetDocumentsResponse'
               examples:
                 recorded:
-                  summary: 真机实录（宿主 0.61，2026-09-18 录制）
+                  summary: 真机实录（MarginNote 0.61，2026-09-18 录制）
                   value: {
                       "items": [
                         {
@@ -3659,7 +3655,7 @@ paths:
         覆盖到的卡。
         `derived` 为真表示该层只由更深的标签推导出来。
 
-        带 `withNotes=1` 时把卡片 id 一并给出；超出预算时只标出截断，不会静默省略。
+        带 `withNotes=1` 时把卡片 id 一并给出；超出预算时只标出截断，不会自动省略。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:979-993
         - capabilities.json 的 noteHashtags 分组
@@ -3676,7 +3672,7 @@ paths:
                 $ref: '#/components/schemas/HashtagsResponse'
               examples:
                 recorded:
-                  summary: 真机实录（宿主 0.61，2026-09-18 录制）
+                  summary: 真机实录（MarginNote 0.61，2026-09-18 录制）
                   value: {
                       "bridgeApiVersion": "0.61",
                       "storedHashtagCount": 2,
@@ -3797,8 +3793,8 @@ paths:
       description: |
         读该学习集实际使用的那套摘录色板。
 
-        每一档给出两个颜色：`baseColor` 是配置里的原色，`displayColor` 是随当前主题调整之后的颜色。
-        取色或者比对颜色用 `displayColor`，把档位当成固定的颜色名则会出错。
+        每一个编号给出两个颜色：`baseColor` 是配置里的原色，`displayColor` 是随当前主题调整之后的颜色。
+        取色或者比对颜色用 `displayColor`，把编号当成固定的颜色名则会出错。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:679-681,972-973
         - capabilities.json 的 noteMetadata 分组
@@ -3814,7 +3810,7 @@ paths:
                 $ref: '#/components/schemas/PaletteResponse'
               examples:
                 recorded:
-                  summary: 真机实录（宿主 0.61，2026-09-18 录制）；实录只保留开头部分
+                  summary: 真机实录（MarginNote 0.61，2026-09-18 录制）；实录只保留开头部分
                   value: {
                       "colors": [
                         {
@@ -3908,12 +3904,12 @@ paths:
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1377-1383
       x-mn-todo:
-        - 回执字段没有依据。
+        - 响应字段没有依据。
       parameters:
         - $ref: '#/components/parameters/Topicid'
       responses:
         '200':
-          description: 回执字段没有依据。
+          description: 响应字段没有依据。
           content:
             application/json:
               schema:
@@ -3923,7 +3919,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执字段没有依据，待实测补入
+                    TODO: 本接口的响应字段没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
       x-codeSamples:
@@ -3939,9 +3935,9 @@ paths:
       summary: 列出复习卡组
       operationId: getDecks
       description: |
-        列出复习卡组。卡组与学习集是两种对象，id 不通用，因此列学习集的端点不会给出卡组。
+        列出复习卡组。卡组与学习集是两种对象，id 不通用，因此列学习集的接口不会给出卡组。
 
-        `cardCount` 只统计复习卡本身，与笔记记录数不是同一个口径，两者不一致属于正常。
+        `cardCount` 只统计复习卡本身，与笔记记录数不是同一个统计范围，两者不一致属于正常。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1188,1220-1222
       responses:
@@ -4085,7 +4081,7 @@ paths:
       description: |
         读文档的章节目录与各自的页范围，用于按章取内容。
 
-        回执里的页数是 PDF 页序，与书上印的页码不是一返回事。`pageCount` 仅供参考，
+        响应里的页数是 PDF 页序，与书上印的页码不是一返回事。`pageCount` 仅供参考，
         文档离屏打开失败时会给 0。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:509-525,851-858
@@ -4128,12 +4124,12 @@ paths:
       summary: 获取文档页文本
       operationId: getDocumentsBookmd5Pages
       description: |
-        按页范围读文本。没有文本层时宿主会先渲染再识别，因此该端点可能较慢。
+        按页范围读文本。没有文本层时 MarginNote 会先渲染再识别，因此该接口可能较慢。
 
         单次跨度上限 60 页。页范围用的是 PDF 页序，第一页是 1。越界的页返回空文本，不算失败。
 
         带 `blocks=1` 时改成按要求返回每一页的版面块，每块给出文字、类型与页内坐标。
-        扫描类端点共用两个名额，名额满了会立即返回 `429`，不排队。
+        扫描类接口共用两个名额，名额满了会立即返回 `429`，不排队。
 
         新摘录进入全文索引有约十秒延迟，刚摘下来的内容不一定马上搜得到。
       x-mn-source:
@@ -4181,10 +4177,10 @@ paths:
       summary: 获取页面注释面
       operationId: getDocumentsBookmd5PagesIndexParts
       description: |
-        读该页上的视觉注释面：手写、插入的留白、按选择生成的留白，以及这些内容与宿主
+        读该页上的视觉注释面：手写、插入的留白、按选择生成的留白，以及这些内容与 MarginNote
         记录的对应关系。
 
-        回执里的 `parts` 是可以取图的项，`blanks` 是逻辑留白。一个按选择生成的留白可能包含多张图，
+        响应里的 `parts` 是可以取图的项，`blanks` 是逻辑留白。一个按选择生成的留白可能包含多张图，
         取用时保持成一组。`mapBacked` 为假表示留白映射丢了，该清单是从物理留白恢复出来的。
 
         带 `studySet` 只调整旧留白映射的解析优先级，不按学习集过滤。
@@ -4225,7 +4221,7 @@ paths:
           source: |
             const r = await mn.api('/documents/' + bookmd5 + '/pages/' + page + '/parts');
             const first = r.parts[0];
-            // 取图用下一条端点，把 contentId 带过去
+            // 取图用下一条接口，把 contentId 带过去
             mn.log(first.contentId, r.mapBacked);
   /documents/{bookmd5}/pages/{index}/content/{contentId}:
     get:
@@ -4237,7 +4233,7 @@ paths:
         按 `contentId` 取回某一页上某项二进制内容的原始字节，例如手写与留白的合成图。
         `contentId` 取自 `GET /documents/{bookmd5}/pages/{index}/parts`。
 
-        返回的是图片本身，不是 JSON，因此该端点要用 `fetch` 原语读取。
+        返回的是图片本身，不是 JSON，因此该接口要用 `fetch` 原语读取。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:744,757-759
       parameters:
@@ -4277,10 +4273,10 @@ paths:
       summary: 获取文档同步状态
       operationId: getDocumentsBookmd5SyncStatus
       description: |
-        对账该文档的数据库引用、云端范围、本地与云端映射、下载队列与陈旧映射。
+        核对该文档的数据库引用、云端范围、本地与云端映射、下载队列与陈旧映射。
 
         结论看 `state`，该字段给出的是整体判断。数据库一侧出现查询错误时，
-        回执里会列出这些错误，此时结论只是部分证据。外部文件提供方一律报未核实。
+        响应里会列出这些错误，此时结论只是部分证据。外部文件提供方一律报未核实。
 
         带 `verifyHash=1` 才计算内容 hash。默认不算；打开之后要扫描整份已实体化的文件，大文档很慢。
       x-mn-source:
@@ -4291,7 +4287,7 @@ paths:
         - $ref: '#/components/parameters/VerifyHash'
       responses:
         '200':
-          description: 对账结果。
+          description: 核对结果。
           content:
             application/json:
               schema:
@@ -4315,7 +4311,7 @@ paths:
           $ref: '#/components/responses/InternalError'
       x-codeSamples:
         - lang: javascript
-          label: 对账一份文档
+          label: 核对一份文档
           source: |
             const r = await mn.api('/documents/' + bookmd5 + '/sync-status');
             if (r.error && r.error.code === 'SYNC_DIAGNOSTIC_QUERY_FAILED') {
@@ -4329,7 +4325,7 @@ paths:
       summary: 扫描目录候选
       operationId: getDocumentsBookmd5TocCandidates
       description: |
-        在端上渲染、识别并跑版面模型，找出可以作为目录条目的标题候选。该端点开销较大，
+        在端上渲染、识别并跑版面模型，找出可以作为目录条目的标题候选。该接口开销较大，
         扫描件上大约每页三秒。
 
         单次跨度上限 60 页，页范围用 PDF 页序。同一页内的候选先后不是阅读顺序。
@@ -4384,22 +4380,22 @@ paths:
       summary: 搜索资料库
       operationId: getSearch
       description: |
-        在整个资料库里搜索，命中分卡片、学习集与文档。用 `scope` 限定命中的类别。
+        在整个资料库里搜索，匹配分卡片、学习集与文档。用 `scope` 限定匹配的类别。
 
-        回执里的 `truncated` 为真表示扫描的窗口没够到，不是库里没有。此时要改用更具体的词
+        响应里的 `truncated` 为真表示扫描的窗口没够到，不是库里没有。此时要改用更具体的词
         重新搜索。
 
         新摘录进入全文索引有约十秒延迟。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:731-738
       x-mn-todo:
-        - 各类命中对应条目的字段没有依据。
+        - 各类匹配对应条目的字段没有依据。
       parameters:
         - $ref: '#/components/parameters/Q'
         - $ref: '#/components/parameters/Scope'
       responses:
         '200':
-          description: 命中与扫描情况。
+          description: 匹配与扫描情况。
           content:
             application/json:
               schema:
@@ -4413,19 +4409,19 @@ paths:
                     description: 为真表示扫描窗口没够到，不是库里没有。
                   notes:
                     type: array
-                    description: 卡片类命中。条目字段没有依据。
+                    description: 卡片类匹配。条目字段没有依据。
                     items:
                       type: object
                       additionalProperties: true
                   studySets:
                     type: array
-                    description: 学习集类命中。条目字段没有依据。
+                    description: 学习集类匹配。条目字段没有依据。
                     items:
                       type: object
                       additionalProperties: true
                   documents:
                     type: array
-                    description: 文档类命中。条目字段没有依据。
+                    description: 文档类匹配。条目字段没有依据。
                     items:
                       type: object
                       additionalProperties: true
@@ -4444,7 +4440,7 @@ paths:
         - lang: javascript
           label: 按书名查找文档
           source: |
-            // 按书名查找，再向下取内容，只能走该端点
+            // 按书名查找，再向下取内容，只能走该接口
             const r = await mn.api('/search?q=' + encodeURIComponent('Walkable Streets')
               + '&scope=documents');
             if (r.truncated) mn.log('扫描窗口没够到，换个更具体的词');
@@ -4458,17 +4454,17 @@ paths:
       description: |
         列出文档文件夹。文件夹是文档根目录下的真实目录，层级用 `/` 分隔，根目录传空串。
 
-        文件夹与学习集互不影响。给文档分类还有另一种方式是标签，与该端点无关。
+        文件夹与学习集互不影响。给文档分类还有另一种方式是标签，与该接口无关。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:925,950-954
       x-mn-todo:
-        - 回执字段没有依据。
+        - 响应字段没有依据。
       parameters:
         - $ref: '#/components/parameters/PathQuery'
         - $ref: '#/components/parameters/Depth'
       responses:
         '200':
-          description: 回执字段没有依据。
+          description: 响应字段没有依据。
           content:
             application/json:
               schema:
@@ -4478,7 +4474,7 @@ paths:
                 placeholder:
                   summary: 待补
                   value:
-                    TODO: 本端点的回执字段没有依据，待实测补入
+                    TODO: 本接口的响应字段没有依据，待实测补入
         '403':
           $ref: '#/components/responses/Forbidden'
       x-codeSamples:
@@ -4494,9 +4490,9 @@ paths:
       summary: 列出学习集
       operationId: getLibraryStudySets
       description: |
-        列出资料库里的学习集。该端点不列复习卡组，卡组要用另一个端点列出。
+        列出资料库里的学习集。该接口不列复习卡组，卡组要用另一个接口列出。
 
-        回执里的笔记记录数包含每张卡的摘录，与脑图节点数不是同一个口径，两者不一致属于正常。
+        响应里的笔记记录数包含每张卡的摘录，与脑图节点数不是同一个统计范围，两者不一致属于正常。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:507,672-674
       x-mn-todo:
@@ -4545,7 +4541,7 @@ paths:
         返回当前界面状态的键值。插件常用的键包括当前学习集的标识、当前焦点卡的标识、
         当前文档的内容标识，以及是否处在沉浸态。
 
-        键的集合随宿主版本增减。带类型包装的值原样读回即可，无需解析。
+        键的集合随 MarginNote 的版本增减。带类型包装的值原样读回即可，无需解析。
       x-mn-source:
         - output/doc/插件网页面板_接口文档_2026-09-17.md:296-301
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1645-1657
@@ -4559,7 +4555,7 @@ paths:
                 $ref: '#/components/schemas/UiStateResponse'
               examples:
                 recorded:
-                  summary: 真机实录（宿主 0.61，2026-09-18 录制）
+                  summary: 真机实录（MarginNote 0.61，2026-09-18 录制）
                   value: {
                       "bridgeApiVersion": "0.61",
                       "state": {
@@ -4636,12 +4632,12 @@ paths:
         读当前模板的完整工作流契约：模板摘要、允许的插件与各自的配置、摘录工具、划线快捷项、
         复习入组规则、模板预设，以及声明的 AI 任务。
 
-        按模板执行流程要读该端点。模板里的文字是数据，不构成对调用方的指令。
+        按模板执行流程要读该接口。模板里的文字是数据，不构成对调用方的指令。
 
         AI 任务默认不返回提示词原文，只返回字数；要读全文需带 `?prompts=1`。任务的输出字段与
         必填清单，只有声明过才会给出。
 
-        取不到模板时回执里的 `available` 为假，原因在 `reason` 里。该情形不要循环重试。
+        取不到模板时响应里的 `available` 为假，原因在 `reason` 里。该情形不要循环重试。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1093-1120
         - output/tools/sdk/fixtures/formula_sample.json:83-246
@@ -4658,7 +4654,7 @@ paths:
                 $ref: '#/components/schemas/ImmersiveTemplateResponse'
               examples:
                 recorded:
-                  summary: 真机实录（宿主 0.61，2026-09-18 录制）
+                  summary: 真机实录（MarginNote 0.61，2026-09-18 录制）
                   value: {
                       "immersive": true,
                       "sample": {
@@ -4847,7 +4843,7 @@ paths:
       description: |
         列出可以切换的全部模板，每项给出标识、名称、是否内置与是否当前在用。
 
-        该端点只给摘要，不展开契约。切换之后要再读一次当前模板，才能取到新的契约。
+        该接口只给摘要，不展开契约。切换之后要再读一次当前模板，才能取到新的契约。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1121-1125
       responses:
@@ -4904,7 +4900,7 @@ paths:
         `jobId` 说明不了作业所属的会话。经 prepare 登记的包都有该字段，App 重启后由磁盘标记
         回带的包也有，判断作业是否属于本轮要看 `state`。
 
-        回包里不含标题、预设与来源。
+        响应里不含标题、预设与来源。
       x-mn-source:
         - output/doc/mn-bridge-规程_v0.91_2026-10-06.md:1312-1323
       parameters:
@@ -4917,7 +4913,7 @@ paths:
             application/json:
               schema:
                 type: object
-                description: 外层键名未取到，条目形状见 `BundleEntry`。
+                description: 外层键名未取到，条目结构见 `BundleEntry`。
                 properties:
                   bundles:
                     type: array
@@ -4952,7 +4948,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
       x-mn-todo:
-        - 外层回包的键名未取到，示例里的 `bundles` 是占位。接入后按实际回包改正。
+        - 外层响应的键名未取到，示例里的 `bundles` 是占位。接入后按实际响应改正。
       x-codeSamples:
         - lang: javascript
           label: 列出自己建立的任务包，找出运行中的包
@@ -4988,7 +4984,7 @@ paths:
             application/json:
               schema:
                 type: object
-                description: 不带 `path` 时的包内文件清单，键名与条目形状未取到。
+                description: 不带 `path` 时的包内文件清单，键名与条目结构未取到。
                 additionalProperties: true
               examples:
                 assembled:
@@ -5009,7 +5005,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-mn-todo:
-        - 不带 `path` 时的外层键名与条目形状未取到，示例里的 `files` 是占位。
+        - 不带 `path` 时的外层键名与条目结构未取到，示例里的 `files` 是占位。
         - 两份内容文件的字段结构未取到。
       x-codeSamples:
         - lang: javascript
@@ -5027,11 +5023,11 @@ paths:
       description: |
         按本设备的序号增量读取同步事件。一次取 1 到 200 条，默认 50 条。
 
-        续读时把上一次回包里的 `lastSequence` 当作 `afterSequence`。`hasMore` 为真表示
+        续读时把上一次响应里的 `lastSequence` 当作 `afterSequence`。`hasMore` 为真表示
         还有可取的事件。
 
         `historyTruncated` 为真表示起点已早于本机保留的滚动窗口，或者窗口内出现过缺口，
-        此时不能声称中间阶段是完整的。尾部没有可返回事件时，宿主会把 `lastSequence` 推到
+        此时不能声称中间阶段是完整的。尾部没有可返回事件时，MarginNote 会把 `lastSequence` 推到
         当前位置并置 `cursorAdvancedPastGap`，避免调用方空转。`cursorAhead` 为真表示调用方的游标与当前
         资料库或设备不符，游标应当重置。
       x-mn-source:
@@ -5041,7 +5037,7 @@ paths:
         - $ref: '#/components/parameters/EventLimit'
       responses:
         '200':
-          description: 事件列表与游标状态。游标字段有据，事件条目形状未取到。
+          description: 事件列表与游标状态。游标字段有据，事件条目结构未取到。
           content:
             application/json:
               schema:
@@ -5081,7 +5077,7 @@ paths:
       summary: 获取旧同步状态
       operationId: getSyncLegacyStatus
       description: |
-        读整机的旧同步诊断快照。回包里不含笔记正文、文档名、账号与云端记录标识。
+        读整机的旧同步诊断快照。响应里不含笔记正文、文档名、账号与云端记录标识。
 
         旧同步分两条通道：一条携带学习集结构与学习数据，另一条携带普通原始文档字节。
         两条会先后完成，其中一条完成不证明另一条也完成。
@@ -5133,21 +5129,21 @@ components:
       name: noteid
       in: path
       required: true
-      description: 卡片的 noteid。取自卡片命令回执的 `noteid`、`POST /notes/batch-get` 回包里 `items[].noteid`，或 `GET /ui-state` 的 `state.focusnoteid`。
+      description: 卡片的 noteid。取自卡片命令响应的 `noteid`、`POST /notes/batch-get` 响应里 `items[].noteid`，或 `GET /ui-state` 的 `state.focusnoteid`。
       schema:
         type: string
     BlankId:
       name: blankId
       in: path
       required: true
-      description: 留白带的身份。取自 `GET /notes/{noteid}/blank-bands` 回包中各项的 `noteid`。
+      description: 留白带的身份。取自 `GET /notes/{noteid}/blank-bands` 响应中各项的 `noteid`。
       schema:
         type: string
     Topicid:
       name: topicid
       in: path
       required: true
-      description: 学习集的 topicid。取自 `GET /ui-state` 的 `state.topicid`、`GET /library/study-sets`，或 `GET /writing/context` 回包里的 `window.topicid`。
+      description: 学习集的 topicid。取自 `GET /ui-state` 的 `state.topicid`、`GET /library/study-sets`，或 `GET /writing/context` 响应里的 `window.topicid`。
       schema:
         type: string
     Deckid:
@@ -5161,7 +5157,7 @@ components:
       name: bookmd5
       in: path
       required: true
-      description: 文档的内容标识。取自 `GET /study-sets/{topicid}/documents` 回包里各项的 `bookmd5`、`GET /ui-state` 的 `state.bookmd5`，或 `GET /search?scope=documents`。
+      description: 文档的内容标识。取自 `GET /study-sets/{topicid}/documents` 响应里各项的 `bookmd5`、`GET /ui-state` 的 `state.bookmd5`，或 `GET /search?scope=documents`。
       schema:
         type: string
     PageIndex:
@@ -5176,7 +5172,7 @@ components:
       name: contentId
       in: path
       required: true
-      description: 二进制项的身份。取自 `POST /notes/batch-get` 回包 `items[].parts[].contentId`，或 `GET /documents/{bookmd5}/pages/{index}/parts` 回包里的 `contentIds`。
+      description: 二进制项的身份。取自 `POST /notes/batch-get` 响应 `items[].parts[].contentId`，或 `GET /documents/{bookmd5}/pages/{index}/parts` 响应里的 `contentIds`。
       schema:
         type: string
     CommentIndex:
@@ -5212,7 +5208,7 @@ components:
       name: scope
       in: query
       required: false
-      description: 只取其中一类命中。
+      description: 只取其中一类匹配。
       schema:
         type: string
         enum:
@@ -5342,7 +5338,7 @@ components:
       name: cursor
       in: query
       required: false
-      description: 下一页的起点，取上一页回包里的 `nextCursor`。
+      description: 下一页的起点，取上一页响应里的 `nextCursor`。
       schema:
         type: string
     WithNotes:
@@ -5398,7 +5394,7 @@ components:
       name: afterSequence
       in: query
       required: false
-      description: 从该序号之后开始读。取上一页回包里的 `lastSequence`。
+      description: 从该序号之后开始读。取上一页响应里的 `lastSequence`。
       schema:
         type: integer
         minimum: 0
@@ -5414,7 +5410,7 @@ components:
         default: 50
   responses:
     Forbidden:
-      description: 该端点不在网页面板的白名单上，页面无法调用。
+      description: 该接口不在网页面板的白名单上，页面无法调用。
       content:
         application/json:
           schema:
@@ -5425,16 +5421,16 @@ components:
               value:
                 error:
                   code: IN_PROCESS_NOT_ALLOWED
-                  message: 该路由不在网页面板的白名单上。
+                  message: 该接口不在网页面板的白名单上。
     NotFound:
-      description: 目标对象不存在，或调用方所在的老宿主没有注册该端点。
+      description: 目标对象不存在，或调用方所在的旧版 MarginNote 没有注册该接口。
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
           examples:
             notFound:
-              summary: 目标不存在或端点未注册
+              summary: 目标不存在或接口未注册
               value:
                 error:
                   code: NOT_FOUND
@@ -5472,7 +5468,7 @@ components:
                   code: INVALID_ORDER
                   message: deleteComment 必须排在 removeHashtags 之前。
     TooManyRequests:
-      description: 扫描名额已经占满。扫描类端点共享两个名额，超出时立即拒绝，不排队。
+      description: 扫描名额已经占满。扫描类接口共享两个名额，超出时立即拒绝，不排队。
       content:
         application/json:
           schema:
@@ -5488,18 +5484,18 @@ components:
                   details:
                     retryAfterSeconds: 3
     InternalError:
-      description: 落地后回读核对不通过，或写入过程报错。回执不等同于成功。
+      description: 落地后重新读取核对不通过，或写入过程报错。响应不等同于成功。
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
           examples:
             saveFailed:
-              summary: 落盘后回读不一致
+              summary: 写入磁盘后重新读取不一致
               value:
                 error:
                   code: SAVE_FAILED
-                  message: 写入之后回读核对不通过，碰过的卡已整体恢复。
+                  message: 写入之后重新读取核对不通过，碰过的卡已整体恢复。
                   retryable: false
     GatewayTimeout:
       description: 扫描迟迟没有结果。
@@ -5518,7 +5514,7 @@ components:
   schemas:
     ErrorEnvelope:
       type: object
-      description: 失败时的响应体。宿主将其当作正常响应体返回，因此落在 resolve 里而不是 reject 里。
+      description: 失败时的响应体。MarginNote 将其当作正常响应体返回，因此落在 resolve 里而不是 reject 里。
       required:
         - error
       properties:
@@ -5535,21 +5531,21 @@ components:
           description: 错误码。判断写入是否发生看该字段，不看 HTTP 状态码。
         message:
           type: string
-          description: 人可读的说明。文案随宿主版本变化，不要用该字段做分支判断。
+          description: 人可读的说明。文案随 MarginNote 的版本变化，不要用该字段做分支判断。
         retryable:
           type: boolean
-          description: 是否明确可以稍后再来。只有外部 Bridge 的回包带该字段，面板本地路由的回包只有 `code` 与 `message`。该布尔无法表达结果未定，此类情况要按端点的说明处理，例如手写会话族看回执里的 `layerLeaseUnresolved`。
+          description: 是否明确可以稍后再来。只有外部 Bridge 的响应带该字段，面板本地路由的响应只有 `code` 与 `message`。该布尔无法表达结果未定，此类情况要按接口的说明处理，例如手写会话族看响应里的 `layerLeaseUnresolved`。
         details:
           type: object
           description: 附加事实。例如 `SCAN_BUSY` 带 `retryAfterSeconds`，`HASHTAG_ROUTE_REQUIRED` 带 `writeRoute`。
           additionalProperties: true
     WriteAck:
       type: object
-      description: 写操作回执的公共部分。部分端点另带自己的字段。
+      description: 写操作响应的公共部分。部分接口另带自己的字段。
       properties:
         persisted:
           type: boolean
-          description: 是否已落地。独立回读核对一致之后才为 `true`，是判断写入成功的唯一凭据。
+          description: 是否已写入。独立重新读取核对一致之后才为 `true`，是判断写入成功的唯一依据。
         noteid:
           type: string
           description: 本次改动的卡片。
@@ -5562,8 +5558,8 @@ components:
         - ops
         - confirm
       description: |
-        一次事务里对同一张卡做的多步写入。宿主先按顺序模拟整串，任何一步不通过，整串都不
-        写入；写入之后回读核对，不一致就把改动过的卡整体恢复。整串最多 32 步，撤销栈上
+        一次提交里对同一张卡做的多步写入。MarginNote 先按顺序模拟整批操作，任何一步不通过，整串都不
+        写入；写入之后重新读取核对，不一致就把改动过的卡整体恢复。一批最多 32 步，撤销栈上
         只占一步。
       properties:
         ops:
@@ -5574,7 +5570,7 @@ components:
             $ref: '#/components/schemas/EditOp'
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上，页面不传也生效。
+          description: 必填。由 MarginNote 自动补上，页面不传也生效。
         syncReview:
           type: boolean
           description: 写完之后按摘录时的自动入组规则把该卡补进复习卡组，与本次写入同一步撤销。
@@ -5666,7 +5662,7 @@ components:
             - setAddonValues
         addon:
           type: string
-          description: 插件公开 id。面板侧由宿主改成面板自己的 owner，页面填写的值不被采纳。
+          description: 插件公开 id。由 MarginNote 改成面板自己的 owner，页面填写的值不被采纳。
         values:
           type: object
           description: 要写入的键值。值为 `null` 表示删掉该键。
@@ -5726,7 +5722,7 @@ components:
                   type: string
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     NoteMetadataRequest:
       type: object
       required:
@@ -5748,7 +5744,7 @@ components:
               type: integer
               minimum: 0
               maximum: 15
-              description: 摘录颜色的档位。每一档的实际颜色随学习集色板变化，取自 `GET /study-sets/{topicid}/note-palette`，不要将该档位当作固定的颜色名。
+              description: 摘录颜色的级别。每一个编号的实际颜色随学习集色板变化，取自 `GET /study-sets/{topicid}/note-palette`，不要将该级别当作固定的颜色名。
             fillIndex:
               type: integer
               enum:
@@ -5756,10 +5752,10 @@ components:
                 - 0
                 - 1
                 - 2
-              description: 摘录样式的档位。该项管的是来源摘录的样式，不是脑图卡片本身的底色。
+              description: 摘录样式的级别。该项管的是来源摘录的样式，不是脑图卡片本身的底色。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     NoteCopyRequest:
       type: object
       required:
@@ -5802,7 +5798,7 @@ components:
                   - clone
         confirm:
           type: boolean
-          description: 必填。该端点的 `confirm` 排在业务校验之后，不带时先完成整套只读校验再返回 `422`。
+          description: 必填。该接口的 `confirm` 排在业务校验之后，不带时先完成整套只读校验再返回 `422`。
     NoteMoveRequest:
       type: object
       required:
@@ -5832,7 +5828,7 @@ components:
                 type: string
         confirm:
           type: boolean
-          description: 必填。该端点的 `confirm` 排在业务校验之前，不带时只返回该错误码。
+          description: 必填。该接口的 `confirm` 排在业务校验之前，不带时只返回该错误码。
     NoteFoldRequest:
       type: object
       required:
@@ -5851,7 +5847,7 @@ components:
           description: 折叠或展开。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     NoteFocusRequest:
       type: object
       properties:
@@ -5877,7 +5873,7 @@ components:
           description: 按 Markdown 解析。默认按纯文本处理。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     CommentAddRequest:
       type: object
       required:
@@ -5897,7 +5893,7 @@ components:
           description: 正文的解析方式。改写现成批注时不接受该项。
         style:
           type: object
-          description: 只有 `format` 为 `rich` 时生效。宿主移除样式时回执里的 `styled` 为 `false`。
+          description: 只有 `format` 为 `rich` 时生效。MarginNote 移除样式时响应里的 `styled` 为 `false`。
           properties:
             fontName:
               type: string
@@ -5917,7 +5913,7 @@ components:
           description: 是否显示字段名。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     CommentEditRequest:
       type: object
       required:
@@ -5933,7 +5929,7 @@ components:
           description: 该条批注当前内容的前 32 个字。内容已变时返回 `409 COMMENT_CHANGED`。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     CommentDeleteRequest:
       type: object
       required:
@@ -5945,7 +5941,7 @@ components:
           description: 该条批注当前内容的前 32 个字。内容已变时返回 `409 COMMENT_CHANGED`。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     FoldIntoSubMapRequest:
       type: object
       required:
@@ -5956,7 +5952,7 @@ components:
           description: 传 `true` 恢复为普通分支。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     MergeBranchRequest:
       type: object
       required:
@@ -5967,7 +5963,7 @@ components:
           description: 连整棵子树一起合并。默认只合并直接子卡。
         confirm:
           type: boolean
-          description: 必填。该端点的 `confirm` 排在业务校验之前。
+          description: 必填。该接口的 `confirm` 排在业务校验之前。
     AddonValuesRequest:
       type: object
       required:
@@ -5977,7 +5973,7 @@ components:
       properties:
         addon:
           type: string
-          description: 插件公开 id。面板侧由宿主改成面板自己的 owner，页面填写的值不被采纳，写不到别的插件名下。
+          description: 插件公开 id。由 MarginNote 改成面板自己的 owner，页面填写的值不被采纳，写不到别的插件名下。
         noteIds:
           type: array
           maxItems: 200
@@ -5990,7 +5986,7 @@ components:
           additionalProperties: true
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     ExcerptsRequest:
       type: object
       required:
@@ -6010,13 +6006,13 @@ components:
           $ref: '#/components/schemas/PageRect'
         toolIndex:
           type: integer
-          description: 摘录工具的序号。取自 `GET /immersive/template` 回包 `excerptTools.tools[].index`。与 `shortcutIndex` 二者取一。
+          description: 摘录工具的序号。取自 `GET /immersive/template` 响应 `excerptTools.tools[].index`。与 `shortcutIndex` 二者取一。
         shortcutIndex:
           type: integer
           description: 划线快捷项的序号。与 `toolIndex` 二者取一。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     PageRect:
       type: object
       required:
@@ -6042,7 +6038,7 @@ components:
       properties:
         expectedRevision:
           type: string
-          description: 版本号凭据。取自 `GET /notes/{noteid}/comments` 或 `POST /notes/batch-get` 回包里的 `commentsRevision`。
+          description: 版本号，用于校验改写。取自 `GET /notes/{noteid}/comments` 或 `POST /notes/batch-get` 响应里的 `commentsRevision`。
         commentId:
           type: string
           description: 继续已有的一份作答纸。不传则新建一份。
@@ -6060,7 +6056,7 @@ components:
           description: 编辑器上的主按钮。传入即等同于代为按下。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     PracticeVerdictRequest:
       type: object
       required:
@@ -6095,7 +6091,7 @@ components:
           description: 错因。可以不传，也可以写成 `null`。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     BlankBandCreateRequest:
       type: object
       required:
@@ -6110,7 +6106,7 @@ components:
           description: 带的高度。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     BlankBandPatchRequest:
       type: object
       required:
@@ -6126,10 +6122,10 @@ components:
           description: 带的高度。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     WindowTopicRequest:
       type: object
-      description: 手写会话族里以窗口与学习集为输入的端点共用同一形状。面板侧两项都可以不填，窗口与身份由宿主注入，只能读本面板所在的窗口。
+      description: 手写会话族里以窗口与学习集为输入的接口共用同一结构。面板两项都可以不填，窗口与身份由 MarginNote 注入，只能读本面板所在的窗口。
       properties:
         windowId:
           type: string
@@ -6139,7 +6135,7 @@ components:
           description: 期望打开的学习集。没有打开学习集时显式传空串。
     WritingContextRequest:
       type: object
-      description: 面板侧可以直接传空对象，窗口与身份由宿主注入。
+      description: 面板可以直接传空对象，窗口与身份由 MarginNote 注入。
       properties:
         windowId:
           type: string
@@ -6185,10 +6181,10 @@ components:
           type: string
         surfaceId:
           type: string
-          description: 要保存的画布。取自 `POST /writing/context` 回包里 `surfaces[].surfaceId`。
+          description: 要保存的画布。取自 `POST /writing/context` 响应里 `surfaces[].surfaceId`。
         requestId:
           type: string
-          description: 本次操作的标识，用 UUID。相同的标识配相同的请求只返回原结果，不会重做一次；不同的目标复用同一个标识返回冲突。
+          description: 本次操作的标识，用 UUID。相同的标识配相同的请求只返回原结果，不会重做一次；不同的目标共用同一个标识返回冲突。
         target:
           type: object
           description: 存储身份，要与当前焦点一致。
@@ -6202,7 +6198,7 @@ components:
               description: 默认层传空串。
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     WritingPencilDocumentCommitRequest:
       type: object
       required:
@@ -6233,7 +6229,7 @@ components:
           additionalProperties: true
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     WritingPencilResultRequest:
       type: object
       required:
@@ -6262,7 +6258,7 @@ components:
           type: string
         expectedRevision:
           type: integer
-          description: 读到的版本号，取值 0 到 256。与 `POST /writing/plan-read` 回执里的 `plan.revision` 对照。
+          description: 读到的版本号，取值 0 到 256。与 `POST /writing/plan-read` 响应里的 `plan.revision` 对照。
         questions:
           type: array
           maxItems: 20
@@ -6282,7 +6278,7 @@ components:
                   - focus
         confirm:
           type: boolean
-          description: 必填。面板侧由宿主自动补上。
+          description: 必填。由 MarginNote 自动补上。
     WritingResolveRequest:
       type: object
       required:
@@ -6316,7 +6312,7 @@ components:
       additionalProperties: true
     StatusResponse:
       type: object
-      description: 当前宿主的能力快照。
+      description: 当前 MarginNote 的能力快照。
       properties:
         app:
           type: string
@@ -6329,16 +6325,16 @@ components:
           description: Bridge 是否开着。
         authorized:
           type: boolean
-          description: 本次请求是否带有效令牌。面板侧走进程内的路径，该项的意义有限。
+          description: 本次请求是否带有效令牌。面板走进程内的路径，该项的意义有限。
         bridgeApiVersion:
           type: string
           description: Bridge 契约版本，也是本分组 `info.version` 的取值来源。
         routeCount:
           type: number
-          description: 该宿主注册的路由条数。
+          description: MarginNote 注册的路由条数。
         apiFingerprint:
           type: string
-          description: 路由目录的指纹。指纹不同即视为不同的契约，据此判断手上的清单是否仍然有效。
+          description: 路由目录的校验值。校验值不同即视为不同的契约，据此判断手上的清单是否仍然有效。
         guideVersion:
           type: string
           description: 运行规程的版本号。
@@ -6363,7 +6359,7 @@ components:
           type: string
         refreshPolicy:
           type: string
-          description: 宿主建议的抓取时机。
+          description: MarginNote 建议的抓取时机。
         usesExistingBearer:
           type: boolean
         installRequired:
@@ -6384,10 +6380,10 @@ components:
           description: 路径模板。
         requiresMax:
           type: boolean
-          description: 只约束外部 Agent。面板侧跳过该项。
+          description: 只约束外部 Agent。面板跳过该项。
     CapabilitiesResponse:
       type: object
-      description: 路由清单与各项上限。字段比此处列出的多，另有若干按主题分组的对象，给出标签操作、元数据档位、手写会话、同步诊断等各自的上限与语义。
+      description: 路由清单与各项上限。字段比此处列出的多，另有若干按主题分组的对象，给出标签操作、元数据级别、手写会话、同步诊断等各自的上限与语义。
       properties:
         bridgeApiVersion:
           type: string
@@ -6418,7 +6414,7 @@ components:
       additionalProperties: true
     UiStateResponse:
       type: object
-      description: 当前界面状态。`state` 里的键随宿主版本增减，读自己认识的键即可。
+      description: 当前界面状态。`state` 里的键随 MarginNote 的版本增减，读自己认识的键即可。
       properties:
         bridgeApiVersion:
           type: string
@@ -6458,7 +6454,7 @@ components:
         excerptShortcuts:
           type: array
           maxItems: 8
-          description: 划线快捷项，原样透传模板里的那一栏。可以是空数组。数组第 N 条对应模板里的槽位 `highlightShortcutN`。插件读得到，造不出也改不了。
+          description: 划线快捷项，原样透传模板里的那一栏。可以是空数组。数组第 N 条对应模板里的位置 `highlightShortcutN`。插件读得到，造不出也改不了。
           items:
             type: object
             additionalProperties: true
@@ -6466,7 +6462,7 @@ components:
           $ref: '#/components/schemas/ImmersiveReview'
         settings:
           type: object
-          description: 模板预设。键是能力 id，值是开关或档位。
+          description: 模板预设。键是能力 id，值是开关或级别。
           additionalProperties: true
         aiTasks:
           type: array
@@ -6475,7 +6471,7 @@ components:
             $ref: '#/components/schemas/AiTaskInfo'
         aiAutoConsentFingerprint:
           type: string
-          description: 自动触发的任务需要用户同意一次，该串是同意自动任务时记下的指纹。没有自动任务时是空串。
+          description: 自动触发的任务需要用户同意一次，该串是同意自动任务时记下的校验值。没有自动任务时是空串。
         sample:
           $ref: '#/components/schemas/ImmersiveSample'
         next:
@@ -6533,7 +6529,7 @@ components:
                 type: number
               highlightMode:
                 type: number
-                description: 高亮样式档位。
+                description: 高亮样式级别。
               colorIndex:
                 type: number
               fillIndex:
@@ -6643,7 +6639,7 @@ components:
       properties:
         bridgeApiVersion:
           type: string
-          description: 返回该结果时宿主的 Bridge 契约版本。
+          description: 返回该结果时 MarginNote 的 Bridge 契约版本。
         items:
           type: array
           items:
@@ -6720,7 +6716,7 @@ components:
         reference:
           type: object
           description: |
-            该卡与来源保持同步。取值是一个对象，判据在该对象的 `isReference` 上。较早的宿主
+            该卡与来源保持同步。取值是一个对象，判据在该对象的 `isReference` 上。较早的 MarginNote
             在该项上直接给 `1` 与 `0`，因此按真值判断。
           properties:
             isReference:
@@ -6733,7 +6729,7 @@ components:
           description: "批注的版本号，请求里带 `comments: true` 时才给。"
         comments:
           type: array
-          description: 批注清单，形状与 `GET /notes/{noteid}/comments` 相同。
+          description: 批注清单，结构与 `GET /notes/{noteid}/comments` 相同。
           items:
             $ref: '#/components/schemas/CommentItem'
     TextPart:
@@ -6916,13 +6912,13 @@ components:
           type: boolean
         isReference:
           type: [boolean, integer]
-          description: 该卡是引用卡。较早的宿主在该项上给 `1` 与 `0`，按真值判断。
+          description: 该卡是引用卡。较早的 MarginNote 在该项上给 `1` 与 `0`，按真值判断。
         subMapId:
           type: string
           description: 该卡所属的子脑图，取值是该子脑图根卡的 noteid。
         docPage:
           type: number
-          description: 文档页码。只在带 `sort=document` 时出现，由宿主补出来。
+          description: 文档页码。只在带 `sort=document` 时出现，由 MarginNote 补出来。
         docBookmd5:
           type: string
           description: 页码所属的文档。只在带 `sort=document` 时出现。
@@ -6948,7 +6944,7 @@ components:
                 description: 页数。可能为 `null`。
               unavailableReason:
                 type: [string, "null"]
-                description: 获获获获获取不到时的原因。获取到时为 `null`。
+                description: 获取不到时的原因。获取到时为 `null`。
               sourceState:
                 type: string
                 description: 文件本身的可用状态。
@@ -7054,7 +7050,7 @@ components:
             properties:
               colorIndex:
                 type: number
-                description: 档位，从 0 起。
+                description: 级别，从 0 起。
               baseColor:
                 $ref: '#/components/schemas/ColorValue'
               displayColor:
@@ -7102,7 +7098,7 @@ components:
           type: string
         cardCount:
           type: number
-          description: 只统计复习卡本身，与笔记记录数不是同一个口径。
+          description: 只统计复习卡本身，与笔记记录数不是同一个统计范围。
         lastModifiedAt:
           type: string
     DeckCardEntry:
@@ -7185,7 +7181,7 @@ components:
                 type: number
         hasToc:
           type: [boolean, integer]
-          description: 这本书是否有目录。较早的宿主在该项上给 `1` 与 `0`，按真值判断。
+          description: 这本书是否有目录。较早的 MarginNote 在该项上给 `1` 与 `0`，按真值判断。
         pageCount:
           type: number
           description: 页数。离屏打开失败时会给 0，不要将该值当作准确值。
@@ -7249,18 +7245,18 @@ components:
                   type: number
         mapBacked:
           type: [boolean, integer]
-          description: 为 `false` 表示留白映射丢失，该清单是从物理留白恢复出来的。较早的宿主在该项上给
+          description: 为 `false` 表示留白映射丢失，该清单是从物理留白恢复出来的。较早的 MarginNote 在该项上给
             `1` 与 `0`，按真值判断。
         topicFilteringApplied:
           type: boolean
           description: 固定为 `false`。
     SyncStatusResponse:
       type: object
-      description: 单个文档的同步对账。
+      description: 单个文档的同步核对。
       properties:
         state:
           type: string
-          description: 对账结论。
+          description: 核对结论。
           enum:
             - database_reference_without_document_mapping
             - waiting_for_icloud_download
@@ -7345,7 +7341,7 @@ components:
           properties:
             transport:
               type: string
-              description: 面板侧是 `panel`。
+              description: 面板是 `panel`。
             ownerID:
               type: string
         surfaces:
@@ -7487,7 +7483,7 @@ components:
           description: 起点已早于本机的滚动记录窗口，或窗口内出现过记录缺口。此时不能声称中间阶段是完整的。
         cursorAdvancedPastGap:
           type: boolean
-          description: 缺口之后没有事件可给，宿主把游标推到了当前位置，避免调用方空转。
+          description: 缺口之后没有事件可给，MarginNote 把游标推到了当前位置，避免调用方空转。
         cursorAhead:
           type: boolean
           description: 表示调用方的游标与当前资料库或设备不符，游标应当重置。
