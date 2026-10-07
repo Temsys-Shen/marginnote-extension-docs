@@ -102,5 +102,10 @@
   "logo": {
     "light": "/images/marginnote-logo-light.svg",
     "dark": "/images/marginnote-logo-dark.svg"
+  },
+  "api": {
+    "playground": {
+      "display": "none"
+    }
   }
 }
