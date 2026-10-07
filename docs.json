@@ -82,9 +82,8 @@
   },
   "navbar": {
     "primary": {
-      "type": "button",
-      "label": "Forum",
-      "href": "https://bbs.marginnote.com.cn"
+      "type": "github",
+      "href": "https://github.com/temsys-shen/marginnote-extension-docs/"
     }
   },
   "contextual": {
