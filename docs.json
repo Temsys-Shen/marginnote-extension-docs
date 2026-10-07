@@ -106,7 +106,7 @@
   },
   "api": {
     "playground": {
-      "display": "none"
+      "display": "simple"
     }
   }
 }
