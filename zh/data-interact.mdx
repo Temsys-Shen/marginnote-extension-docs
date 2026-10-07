@@ -3,5 +3,136 @@ title: "数据交互"
 ---
 
 <Warning>
-  本文尚未完成
+  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
 </Warning>
+
+面板与 MarginNote 之间的数据来往，走的是页面里发向 `/bridge/v1` 的请求。使用之前，先确认可调的端点范围、请求的写法与失败的判据。按下面的顺序读下去，就能写出一段可用的调用。
+
+# 调用形态
+
+`mn.api(path, opts)` 只有一层实现：
+
+```javascript
+fetch('/bridge/v1' + path, opts).then(r => r.json())
+```
+
+`path` 从端点路径写起，不再重复 `/bridge/v1`。读与写都走同一个方法：
+
+<CodeGroup>
+
+```javascript 读
+const state = await mn.api('/ui-state');
+const topicid = state.state.topicid;
+```
+
+```javascript 写
+await mn.api('/notes/addon-values', {
+  method: 'POST',
+  body: { noteIds: [noteid], values: { status: 'done' } }
+});
+```
+
+</CodeGroup>
+
+`mn.api` 会把响应体一律按 JSON 解析，没有别的分支。响应不是 JSON 的端点，用 `mn.api` 会抛出 `SyntaxError`，这类端点要改用 `fetch` 原语：
+
+- `GET /guide` 返回 Markdown 正文。
+- `GET /notes/{noteid}/render` 返回卡片长图或 PDF。
+- `GET /documents/{bookmd5}/pages/{index}/content/{contentId}` 返回图片。
+- `GET /bundles/{bundleId}/files` 带 `path` 时返回该文件的原始字节。
+
+```javascript
+// 获取运行时规程，响应是 Markdown
+const text = await (await fetch('/bridge/v1/guide')).text();
+
+// 获取一张卡的长图
+const shot = await fetch('/bridge/v1/notes/' + noteid + '/render?format=png&width=880');
+const blob = await shot.blob();
+```
+
+# 可调的端点范围
+
+页面的可调范围由两道名单决定。第一道决定面板能否建立，看模板的 `plugins` 名单与当前是否处于沉浸态。第二道决定页面可调的范围。请求落在第二道名单之外时，返回 `403`，错误码为 `IN_PROCESS_NOT_ALLOWED`。
+
+`GET /capabilities` 里的 `requiresMax` 只约束外部 Agent。面板走进程内的路径，跳过令牌、订阅状态与跨设备批准。判断端点可用与否，只看该端点是否在名单上。
+
+全部可调端点、各端点的请求体与回包字段、每条端点的调用示例，见本文档站的 `API 参考` 分组。
+
+# 写操作的参数
+
+面板写数据时，`addon` 与 `confirm` 由 MarginNote 代办。`POST /notes/addon-values` 与 `POST /notes/{noteid}/edits` 的 `addon` 会被改成该面板所属插件的 id，页面填写的其他值不被采纳，因此写不进别的插件的命名空间。同一条路径上的 `confirm` 由宿主补上，页面写的值不会被采纳，也不必写。其余写端点是否要 `confirm`，看各端点自己的请求体说明。
+
+因此写本插件的数据时，请求体里不必出现 `addon` 与 `confirm`：
+
+```javascript
+// 给若干张卡写入本插件的数据
+await mn.api('/notes/addon-values', {
+  method: 'POST',
+  body: {
+    noteIds: ['5880F73A-3A6D-4464-9D6F-88F60285401E'],
+    values: { status: 'done', pick: 2 }
+  }
+});
+```
+
+回执里的 `persisted` 是宿主独立回读核对一致之后才给的，判断写入是否完成依据该字段。
+
+# 失败的判据
+
+宿主把错误信封当作正常响应体返回，因此落在 resolve 里，不会让 Promise 进入 reject：
+
+```json
+{
+  "error": {
+    "code": "IN_PROCESS_NOT_ALLOWED",
+    "message": "该端点不在网页面板的白名单上。",
+    "retryable": false
+  }
+}
+```
+
+判断一次调用的结果，看回包里是否带 `error`：
+
+```javascript
+const r = await mn.api('/notes/' + noteid + '/edits', {
+  method: 'POST',
+  body: { ops: [{ op: 'setTitle', text: '新的标题' }] }
+});
+if (r.error) {
+  mn.log(r.error.code, r.error.message);
+} else if (r.persisted) {
+  mn.log('已写入并核对通过');
+}
+```
+
+`retryable` 只有真与假，表达不了结果未知。写入侧的失败分为明确拒绝、结果未知、可以重试。落在结果未知一类时不要自动重发，先读取现状再决定。
+
+# 完整示例
+
+用户在文档上划线时，插件要把摘录内容写进自己的数据。整个过程依次是获取当前上下文、获取卡片数据、写插件字段。
+
+```javascript
+mn.on('excerpt', async d => {
+  // 一、获取当前界面状态，得到学习集与聚焦的卡
+  const ui = await mn.api('/ui-state');
+  const topicid = ui.state.topicid;
+
+  // 二、获取该卡的标题、正文、标签与插件字段
+  const got = await mn.api('/notes/batch-get', {
+    method: 'POST',
+    body: { noteIds: [d.noteid], addons: ['mn.hello'] }
+  });
+  const card = got.items[0];
+  if (!card.found) return;
+
+  // 三、把结果写回本插件自己的字段
+  await mn.api('/notes/addon-values', {
+    method: 'POST',
+    body: { noteIds: [d.noteid], values: { status: 'done', topicid } }
+  });
+
+  mn.fit();
+});
+```
+
+卡片命令的回调写法、面板模式的切换与事件声明，见[事件系统](/zh/events)与[使用 window.mn 与 MN 进行交互](/zh/sdk)。
