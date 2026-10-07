@@ -106,7 +106,8 @@
   },
   "api": {
     "playground": {
-      "display": "simple"
+      "display": "simple",
+      "proxy": false
     }
   }
 }
