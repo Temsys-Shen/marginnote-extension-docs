@@ -34,13 +34,15 @@
               "zh/ui",
               "zh/data-interact",
               "zh/events"
-            ]
+            ],
+            "icon": "mug-hot"
           },
           {
             "group": "模板配置",
             "pages": [
               "zh/basic-package"
-            ]
+            ],
+            "icon": "block-question"
           },
           {
             "group": "深入插件",
@@ -50,11 +52,13 @@
               "zh/menu-commands",
               "zh/use-inner-ai",
               "zh/jsaddon"
-            ]
+            ],
+            "icon": "plug"
           },
           {
             "group": "API 参考",
-            "openapi": "openapi/plugin-api.yaml"
+            "openapi": "openapi/plugin-api.yaml",
+            "icon": "book"
           }
         ],
         "default": true
