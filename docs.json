@@ -58,7 +58,10 @@
           {
             "group": "API 参考",
             "openapi": "openapi/plugin-api.yaml",
-            "icon": "book"
+            "icon": "book",
+            "pages": [
+              "untitled-page"
+            ]
           }
         ],
         "default": true
