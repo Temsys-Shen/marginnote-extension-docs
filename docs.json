@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "maple",
   "name": "Marginnote Dev Docs",
   "colors": {
     "primary": "#2463EB",
@@ -96,11 +96,10 @@
       "perplexity",
       "mcp",
       "cursor",
-      "vscode",
-      "download-pdf"
+      "vscode"
     ]
   },
-  "description": "Marginnote 场景模板教程文档",
+  "description": "Marginnote 开发文档",
   "icons": {
     "library": "fontawesome"
   },
