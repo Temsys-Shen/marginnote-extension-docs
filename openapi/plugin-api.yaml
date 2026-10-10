@@ -50,10 +50,14 @@ tags:
     description: 学习集结构、脑图树、子脑图、色板、快照与复习卡组。
   - name: 文档与页面
     description: 文档目录、页文本、页内注释面、摘录清单与同步诊断。
+  - name: 导出与 Anki
+    description: 文档导出计划、导出文件、Anki 导出能力、作业与产物。
   - name: 查找
     description: 跨库搜索、文件夹列表与学习集列表。
   - name: 界面与模板
     description: 读取当前界面状态与沉浸模板。
+  - name: 插件辅助
+    description: 面板辅助脚本、已配对设备与本机 helper 信息。
   - name: 任务包与同步诊断
     description: 拆书任务包与旧 CloudKit 同步诊断。
 paths:
@@ -1432,6 +1436,121 @@ paths:
             // 按版本号与哈希缓存；只按版本号缓存会漏掉正文改写
             const caps = await mn.api('/capabilities');
             const { version, sha256 } = caps.guide;
+  /skill:
+    get:
+      tags:
+        - 插件辅助
+      summary: 获取本机 helper skill
+      operationId: getSkill
+      description: |
+        返回本机 Agent 可安装的 MarginNote Bridge helper skill 内容与安装提示。该接口只读，不安装文件。
+
+        响应可能包含不同 Agent 的安装建议。不要把响应里的本机目录路径显示给最终用户。
+      responses:
+        '200':
+          description: helper skill 信息。结构会随宿主版本扩展。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillResponse'
+              examples:
+                assembled:
+                  summary: 构造示例
+                  value:
+                    bridgeApiVersion: '0.91'
+                    skill:
+                      name: mn-bridge
+                      files:
+                      - path: SKILL.md
+                        content: '# MarginNote Bridge'
+                    refreshShRoute: /skill/refresh.sh
+                    refreshPowerShellRoute: /skill/refresh.ps1
+      x-codeSamples:
+        - lang: javascript
+          label: 读取 helper skill
+          source: |
+            const r = await mn.api('/skill');
+            mn.log(r.skill && r.skill.name);
+  /skill/refresh.sh:
+    get:
+      tags:
+        - 插件辅助
+      summary: 获取 shell 刷新脚本
+      operationId: getSkillRefreshSh
+      description: |
+        返回用于刷新本机 helper skill 的 shell 脚本。响应不是 JSON，要用 `fetch` 按文本读取。
+
+        脚本只面向本机使用，不应在面板里自动执行。
+      responses:
+        '200':
+          description: shell 脚本文本。
+          content:
+            text/x-shellscript:
+              schema:
+                type: string
+            text/plain:
+              schema:
+                type: string
+      x-codeSamples:
+        - lang: javascript
+          label: 读取脚本文本
+          source: |
+            const script = await fetch('/bridge/v1/skill/refresh.sh').then(r => r.text());
+            mn.log(script.length);
+  /skill/refresh.ps1:
+    get:
+      tags:
+        - 插件辅助
+      summary: 获取 PowerShell 刷新脚本
+      operationId: getSkillRefreshPs1
+      description: |
+        返回用于刷新本机 helper skill 的 PowerShell 脚本。响应不是 JSON，要用 `fetch` 按文本读取。
+
+        脚本只面向本机使用，不应在面板里自动执行。
+      responses:
+        '200':
+          description: PowerShell 脚本文本。
+          content:
+            text/plain:
+              schema:
+                type: string
+      x-codeSamples:
+        - lang: javascript
+          label: 读取脚本文本
+          source: |
+            const script = await fetch('/bridge/v1/skill/refresh.ps1').then(r => r.text());
+            mn.log(script.length);
+  /devices:
+    get:
+      tags:
+        - 插件辅助
+      summary: 列出已配对设备
+      operationId: getDevices
+      description: |
+        返回本机已配对设备的摘要。该响应不包含令牌材料，只用于让调用方知道本机记录过哪些设备。
+      responses:
+        '200':
+          description: 设备清单。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevicesResponse'
+              examples:
+                assembled:
+                  summary: 构造示例，未实测
+                  value:
+                    bridgeApiVersion: '0.91'
+                    devices:
+                    - id: macbook
+                      name: MacBook
+                      platform: macOS
+                      pairedAt: '2026-10-07T10:20:00Z'
+      x-codeSamples:
+        - lang: javascript
+          label: 列出设备
+          source: |
+            const r = await mn.api('/devices');
+            mn.log((r.devices || []).length);
   /context:
     get:
       tags:
@@ -4291,6 +4410,107 @@ paths:
 
             const r = await fetch('/bridge/v1/notes/' + noteid + '/content/' + part.contentId + '?maxEdge=880');
             document.querySelector('#shot').src = URL.createObjectURL(await r.blob());
+  /anki/capabilities:
+    get:
+      tags:
+        - 导出与 Anki
+      summary: 获取 Anki 导出能力
+      operationId: getAnkiCapabilities
+      description: |
+        返回 Anki 导出相关的格式、上限、作业与上传路由。具体 request/response 字段随宿主版本扩展，
+        调用前应优先读取该接口。
+      responses:
+        '200':
+          description: Anki 导出能力清单。结构与 `GET /capabilities` 中的 ankiExport 分组同形。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnkiCapabilitiesResponse'
+              examples:
+                assembled:
+                  summary: 构造示例，未实测
+                  value:
+                    contractVersion: 2
+                    jobRoute: /anki/jobs
+                    uploadRoute: /anki/uploads
+                    downloadRoute: /anki/jobs/{id}/files?name={artifactName}
+                    sessionScopedArtifacts: true
+                    limits:
+                      activeJobs: 1
+                      retainedJobs: 16
+      x-codeSamples:
+        - lang: javascript
+          label: 获取 Anki 能力
+          source: |
+            const r = await mn.api('/anki/capabilities');
+            mn.log(r.contractVersion, r.limits);
+  /anki/jobs/{jobId}:
+    get:
+      tags:
+        - 导出与 Anki
+      summary: 查询 Anki 作业
+      operationId: getAnkiJobsJobId
+      description: |
+        查询 Anki 导出、预览、校验或检查作业的状态。作业产物是会话内对象，重启或清理后可能返回 `404`。
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: 作业状态。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnkiJobResponse'
+              examples:
+                assembled:
+                  summary: 构造示例，未实测
+                  value:
+                    jobId: anki-3F1A2B40
+                    state: finished
+                    operation: export
+                    artifacts:
+                    - name: collection.apkg
+                      mimeType: application/octet-stream
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-codeSamples:
+        - lang: javascript
+          label: 查询作业
+          source: |
+            const r = await mn.api('/anki/jobs/' + jobId);
+            if (r.error) mn.log(r.error.code);
+  /anki/jobs/{jobId}/files:
+    get:
+      tags:
+        - 导出与 Anki
+      summary: 下载 Anki 作业产物
+      operationId: getAnkiJobsJobIdFiles
+      description: |
+        下载 Anki 作业生成的产物。带 `name` 查询参数指定产物名，例如 `collection.apkg`。
+        响应不是 JSON，页面里要用 `fetch` 原语读取 Blob。
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/ArtifactName'
+      responses:
+        '200':
+          description: 作业产物内容。
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-codeSamples:
+        - lang: javascript
+          label: 下载作业产物
+          source: |
+            const res = await fetch('/bridge/v1/anki/jobs/' + jobId + '/files?name=' + encodeURIComponent(name));
+            const blob = await res.blob();
   /writing/windows:
     get:
       tags:
@@ -6280,6 +6500,407 @@ paths:
               // 唯一明确可以稍后再来的拒绝：主数据上下文还有未保存的改动
             }
             if (r.pngBase64) document.querySelector('#shot').src = 'data:image/png;base64,' + r.pngBase64;
+  /writing/session-create:
+    post:
+      tags:
+        - 手写会话
+      summary: 创建练习会话
+      operationId: postWritingSessionCreate
+      description: |
+        基于已保存的练习准备清单创建一趟练习会话记录。该族接口的返回是进程内状态，
+        不能替代重新读取 `POST /writing/session-read`。
+      responses:
+        '200':
+          description: 会话操作结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-reserve:
+    post:
+      tags:
+        - 手写会话
+      summary: 预留下一次练习尝试
+      operationId: postWritingSessionReserve
+      description: |
+        为当前练习会话预留一次尝试。响应只表示该次命令的处理结果；之后应按 `requestId`
+        或重新读取会话记录确认。
+      responses:
+        '200':
+          description: 会话操作结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-cancel:
+    post:
+      tags:
+        - 手写会话
+      summary: 取消练习会话
+      operationId: postWritingSessionCancel
+      description: 取消当前练习会话或指定运行记录。取消之后应重新读取会话状态。
+      responses:
+        '200':
+          description: 会话操作结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-pause:
+    post:
+      tags:
+        - 手写会话
+      summary: 暂停练习会话
+      operationId: postWritingSessionPause
+      description: 暂停当前练习会话。该命令只写会话记录，不代表当前画布已经保存。
+      responses:
+        '200':
+          description: 会话操作结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-resume:
+    post:
+      tags:
+        - 手写会话
+      summary: 恢复练习会话
+      operationId: postWritingSessionResume
+      description: 恢复之前暂停的练习会话。恢复后仍需看 `ready` 与 `canSwitch` 判断当前是否能切题。
+      responses:
+        '200':
+          description: 会话操作结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-finish:
+    post:
+      tags:
+        - 手写会话
+      summary: 结束练习会话
+      operationId: postWritingSessionFinish
+      description: 将当前练习会话标记为完成。完成状态应以重新读取的会话记录为准。
+      responses:
+        '200':
+          description: 会话操作结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-assess:
+    post:
+      tags:
+        - 手写会话
+      summary: 记录练习评估
+      operationId: postWritingSessionAssess
+      description: 为当前练习会话或指定尝试记录评估结果。字段细节以运行时 `GET /guide` 为准。
+      responses:
+        '200':
+          description: 会话操作结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-reconcile:
+    post:
+      tags:
+        - 手写会话
+      summary: 对齐练习会话记录
+      operationId: postWritingSessionReconcile
+      description: 将练习会话记录与当前窗口观察到的状态对齐。该操作可能返回需要调用方重新读取的状态。
+      responses:
+        '200':
+          description: 会话操作结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/focus-enter:
+    post:
+      tags:
+        - 手写会话
+      summary: 进入焦点卡作答
+      operationId: postWritingFocusEnter
+      description: 从当前窗口进入焦点卡作答流程。是否真的可进入由运行时的 `ready`、`canSwitch` 与返回结果决定。
+      responses:
+        '200':
+          description: 转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingTransitionResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingTransitionCommand'
+  /writing/blank-prepare:
+    post:
+      tags:
+        - 手写会话
+      summary: 准备留白作答空间
+      operationId: postWritingBlankPrepare
+      description: 为留白作答准备空间，但不等同于已经进入留白页。后续结果看 `POST /writing/transition-result`。
+      responses:
+        '200':
+          description: 转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingTransitionResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingTransitionCommand'
+  /writing/blank-enter:
+    post:
+      tags:
+        - 手写会话
+      summary: 进入留白作答
+      operationId: postWritingBlankEnter
+      description: 进入题目对应的留白作答位置。该接口可能触发窗口转场，调用后应查询转场结果。
+      responses:
+        '200':
+          description: 转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingTransitionResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingTransitionCommand'
+  /writing/focus-begin:
+    post:
+      tags:
+        - 手写会话
+      summary: 开始焦点卡分层练习
+      operationId: postWritingFocusBegin
+      description: 在受控练习层里开始焦点卡作答。该族接口可能保留手写层租约，失败后不要盲目重试。
+      responses:
+        '200':
+          description: 转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingTransitionResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingTransitionCommand'
+  /writing/blank-begin:
+    post:
+      tags:
+        - 手写会话
+      summary: 开始留白分层练习
+      operationId: postWritingBlankBegin
+      description: 在受控练习层里开始留白作答。调用前应先读取写作能力与当前窗口上下文。
+      responses:
+        '200':
+          description: 转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingTransitionResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingTransitionCommand'
+  /writing/layer-restore:
+    post:
+      tags:
+        - 手写会话
+      summary: 恢复练习手写层
+      operationId: postWritingLayerRestore
+      description: 将受控练习层恢复到当前窗口。恢复是否完成看转场结果，不要仅凭 HTTP 状态码判断。
+      responses:
+        '200':
+          description: 转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingTransitionResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingTransitionCommand'
+  /writing/session-focus-begin:
+    post:
+      tags:
+        - 手写会话
+      summary: 在练习会话中开始焦点卡作答
+      operationId: postWritingSessionFocusBegin
+      description: 会话版焦点卡开始命令，会同时关联练习会话记录。字段细节以运行时 `GET /guide` 为准。
+      responses:
+        '200':
+          description: 会话转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-blank-begin:
+    post:
+      tags:
+        - 手写会话
+      summary: 在练习会话中开始留白作答
+      operationId: postWritingSessionBlankBegin
+      description: 会话版留白开始命令，会同时关联练习会话记录。字段细节以运行时 `GET /guide` 为准。
+      responses:
+        '200':
+          description: 会话转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-layer-restore:
+    post:
+      tags:
+        - 手写会话
+      summary: 恢复练习会话手写层
+      operationId: postWritingSessionLayerRestore
+      description: 恢复某次练习会话关联的手写层。调用后应重新读取会话记录或查询转场结果。
+      responses:
+        '200':
+          description: 会话转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-focus-enter:
+    post:
+      tags:
+        - 手写会话
+      summary: 在练习会话中进入焦点卡作答
+      operationId: postWritingSessionFocusEnter
+      description: 会话版焦点卡进入命令。该路由只应由当前练习面板在自己的窗口里调用。
+      responses:
+        '200':
+          description: 会话转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-blank-enter:
+    post:
+      tags:
+        - 手写会话
+      summary: 在练习会话中进入留白作答
+      operationId: postWritingSessionBlankEnter
+      description: 会话版留白进入命令。该路由只应由当前练习面板在自己的窗口里调用。
+      responses:
+        '200':
+          description: 会话转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/session-exit:
+    post:
+      tags:
+        - 手写会话
+      summary: 退出当前练习尝试
+      operationId: postWritingSessionExit
+      description: 退出当前练习尝试并记录可恢复状态。退出不等于笔迹一定已经持久化，之后应读取会话记录。
+      responses:
+        '200':
+          description: 会话操作结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingSessionCommandResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        $ref: '#/components/requestBodies/WritingSessionCommand'
+  /writing/transition-result:
+    post:
+      tags:
+        - 手写会话
+      summary: 查询作答转场结果
+      operationId: postWritingTransitionResult
+      description: |
+        用发起转场时的 `requestId` 查询结果。查不到记录时不代表转场没有发生，只说明本进程没有这笔记录。
+      responses:
+        '200':
+          description: 转场结果。可能还有未列出的字段。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingTransitionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WritingTransitionResultRequest'
+            examples:
+              sameId:
+                summary: 查询同一次请求
+                value:
+                  requestId: 9F8E7D6C-5B4A-4938-8271-6F5E4D3C2B1A
+      x-codeSamples:
+        - lang: javascript
+          label: 查询转场结果
+          source: |
+            const r = await mn.api('/writing/transition-result', {
+              method: 'POST',
+              body: { requestId }
+            });
+            if (r.error) mn.log(r.error.code);
   /study-sets/{topicid}/tree:
     get:
       tags:
@@ -8188,6 +8809,112 @@ paths:
               // 数据库侧查询全失败，不代表文档或笔记不存在
             }
             mn.log(r.state);
+  /document-export-plans/{exportPlanId}:
+    get:
+      tags:
+        - 导出与 Anki
+      summary: 查询文档导出计划
+      operationId: getDocumentExportPlansExportPlanId
+      description: |
+        查询 `POST /documents/{bookmd5}/export-plan` 创建的导出计划状态。计划是会话内对象，
+        重启或清理后可能返回 `404`。
+      parameters:
+        - $ref: '#/components/parameters/ExportPlanId'
+      responses:
+        '200':
+          description: 导出计划状态。结构会随宿主版本扩展。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentExportPlanResponse'
+              examples:
+                assembled:
+                  summary: 构造示例，未实测
+                  value:
+                    planId: plan-3F1A2B40
+                    state: ready
+                    selectedPageCount: 12
+                    exportRoute: /documents/8daef026/export
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-codeSamples:
+        - lang: javascript
+          label: 查询导出计划
+          source: |
+            const r = await mn.api('/document-export-plans/' + planId);
+            if (r.error) mn.log(r.error.code);
+  /document-export-plans/{exportPlanId}/cancel:
+    post:
+      tags:
+        - 导出与 Anki
+      summary: 取消文档导出计划
+      operationId: postDocumentExportPlansExportPlanIdCancel
+      description: 取消正在准备的文档导出计划。已完成或不存在的计划可能返回错误对象。
+      parameters:
+        - $ref: '#/components/parameters/ExportPlanId'
+      responses:
+        '200':
+          description: 取消结果。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentExportPlanResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      requestBody:
+        $ref: '#/components/requestBodies/ConfirmOnly'
+  /document-export-plans/{exportPlanId}/discard:
+    post:
+      tags:
+        - 导出与 Anki
+      summary: 丢弃文档导出计划
+      operationId: postDocumentExportPlansExportPlanIdDiscard
+      description: 丢弃导出计划及其会话内状态。该操作不会修改文档或学习集。
+      parameters:
+        - $ref: '#/components/parameters/ExportPlanId'
+      responses:
+        '200':
+          description: 丢弃结果。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentExportPlanResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      requestBody:
+        $ref: '#/components/requestBodies/ConfirmOnly'
+  /document-exports/{exportId}/file:
+    get:
+      tags:
+        - 导出与 Anki
+      summary: 下载文档导出文件
+      operationId: getDocumentExportsExportIdFile
+      description: |
+        下载文档导出的产物。响应不是 JSON，页面里要用 `fetch` 原语读取 Blob。
+
+        导出文件是会话内保留的临时产物，保留数量与时长以 `GET /capabilities` 为准。
+      parameters:
+        - $ref: '#/components/parameters/ExportId'
+      responses:
+        '200':
+          description: 导出的文件内容。
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-codeSamples:
+        - lang: javascript
+          label: 下载导出文件
+          source: |
+            const res = await fetch('/bridge/v1/document-exports/' + exportId + '/file');
+            const blob = await res.blob();
   /documents/{bookmd5}/toc-candidates:
     get:
       tags:
@@ -10716,6 +11443,34 @@ components:
       description: 拆书任务包的身份。取自 `GET /bundles`。
       schema:
         type: string
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      description: Anki 导出作业的身份。取自 `POST /anki/jobs` 或作业列表响应。
+      schema:
+        type: string
+    ExportPlanId:
+      name: exportPlanId
+      in: path
+      required: true
+      description: 文档导出计划的身份。取自 `POST /documents/{bookmd5}/export-plan` 响应。
+      schema:
+        type: string
+    ExportId:
+      name: exportId
+      in: path
+      required: true
+      description: 文档导出产物的身份。取自 `POST /documents/{bookmd5}/export` 或导出计划状态响应。
+      schema:
+        type: string
+    ArtifactName:
+      name: name
+      in: query
+      required: false
+      description: Anki 作业产物名。取自作业状态响应的 `artifacts[].name`。
+      schema:
+        type: string
     Query:
       name: query
       in: query
@@ -10934,6 +11689,46 @@ components:
         minimum: 1
         maximum: 200
         default: 50
+  requestBodies:
+    ConfirmOnly:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              confirm:
+                type: boolean
+                description: 写操作确认。面板调用时 MarginNote 会补上。
+          examples:
+            confirm:
+              value:
+                confirm: true
+    WritingSessionCommand:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WritingSessionCommandRequest'
+          examples:
+            panelSide:
+              summary: 面板直接传最少字段
+              value:
+                requestId: 9F8E7D6C-5B4A-4938-8271-6F5E4D3C2B1A
+                confirm: true
+    WritingTransitionCommand:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WritingTransitionRequest'
+          examples:
+            focus:
+              summary: 进入焦点卡作答
+              value:
+                requestId: 9F8E7D6C-5B4A-4938-8271-6F5E4D3C2B1A
+                questionId: D3085422-2CB9-4B68-A78D-DEE351CF9C38
+                confirm: true
   responses:
     NotFound:
       description: 目标对象不存在，或调用方所在的旧版 MarginNote 没有注册该接口。
@@ -13043,6 +13838,136 @@ components:
           type: boolean
         canSwitch:
           type: boolean
+    WritingSessionCommandRequest:
+      type: object
+      description: |
+        练习会话命令的公共输入。不同命令会读取其中一部分字段；未列出的扩展字段以运行时 `GET /guide` 为准。
+      properties:
+        windowId:
+          type: string
+          description: 可选。面板调用时通常由宿主按当前窗口补齐。
+        expectedTopicId:
+          type: string
+          description: 可选。用于确认当前窗口仍在预期学习集。
+        requestId:
+          type: string
+          description: 调用方生成的幂等标识。重试同一命令时复用。
+        runId:
+          type: string
+          description: 指定练习会话趟数。部分命令可省略，使用当前趟。
+        attemptId:
+          type: string
+          description: 指定某次尝试。评估、退出、恢复类命令可能需要。
+        questionId:
+          type: string
+          description: 题目卡片或作答载体的身份。
+        carrier:
+          type: string
+          description: 作答载体，例如 `focus` 或 `blank`。
+        confirm:
+          type: boolean
+          description: 写操作确认。面板调用时 MarginNote 会补上。
+      additionalProperties: true
+    WritingSessionCommandResponse:
+      type: object
+      description: |
+        练习会话命令的公共响应。结果可能是已完成、待查询、被拒或需要重新读取状态；
+        不要只看 HTTP 状态码。
+      properties:
+        schemaVersion:
+          type: integer
+        bridgeApiVersion:
+          type: string
+        requestId:
+          type: string
+        runId:
+          type: string
+        attemptId:
+          type: string
+        state:
+          type: string
+        outcome:
+          type: string
+        settled:
+          type: boolean
+        persisted:
+          type: boolean
+        ready:
+          type: boolean
+        canSwitch:
+          type: boolean
+        code:
+          type: string
+          description: 受理之后才出现的失败码，走该项而不是 `error.code`。
+      additionalProperties: true
+    WritingTransitionRequest:
+      type: object
+      description: 作答转场命令的公共输入。不同路由会读取其中一部分字段。
+      properties:
+        windowId:
+          type: string
+        expectedTopicId:
+          type: string
+        requestId:
+          type: string
+          description: 调用方生成的幂等标识。后续查询 `transition-result` 时使用。
+        questionId:
+          type: string
+          description: 要进入或开始作答的题目。
+        carrier:
+          type: string
+          description: 作答载体，例如 `focus` 或 `blank`。
+        runId:
+          type: string
+        attemptId:
+          type: string
+        confirm:
+          type: boolean
+          description: 写操作确认。面板调用时 MarginNote 会补上。
+      additionalProperties: true
+    WritingTransitionResultRequest:
+      type: object
+      required:
+        - requestId
+      properties:
+        windowId:
+          type: string
+        expectedTopicId:
+          type: string
+        requestId:
+          type: string
+          description: 发起转场时使用的请求标识。
+      additionalProperties: true
+    WritingTransitionResponse:
+      type: object
+      description: 作答转场结果。看 `settled`、`outcome`、`ready` 与 `canSwitch`，不要只看 HTTP 状态码。
+      properties:
+        schemaVersion:
+          type: integer
+        bridgeApiVersion:
+          type: string
+        requestId:
+          type: string
+        state:
+          type: string
+          description: 受理时可能为 `pending`。
+        settled:
+          type: boolean
+        outcome:
+          type: string
+        ready:
+          type: boolean
+        canSwitch:
+          type: boolean
+        scope:
+          type: string
+        code:
+          type: string
+          description: 受理之后才出现的失败码，走该项而不是 `error.code`。
+        layerLeaseUnresolved:
+          type: boolean
+          description: 为 `true` 时结果不确定，不要自动重试，先读取状态。
+      additionalProperties: true
     WritingPreviewResponse:
       type: object
       description: 某一趟作答中已退出的尝试所留下的笔迹预览。只读。
@@ -13094,6 +14019,115 @@ components:
         bridgeApiVersion:
           type: string
           description: 宿主的接口版本。
+    SkillResponse:
+      type: object
+      description: 本机 helper skill 内容与刷新入口。
+      properties:
+        bridgeApiVersion:
+          type: string
+        skill:
+          type: object
+          additionalProperties: true
+        refreshShRoute:
+          type: string
+        refreshPowerShellRoute:
+          type: string
+      additionalProperties: true
+    DevicesResponse:
+      type: object
+      description: 已配对设备摘要，不包含令牌材料。
+      properties:
+        bridgeApiVersion:
+          type: string
+        devices:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              platform:
+                type: string
+              pairedAt:
+                type: string
+            additionalProperties: true
+      additionalProperties: true
+    AnkiCapabilitiesResponse:
+      type: object
+      description: Anki 导出能力清单。
+      properties:
+        contractVersion:
+          type: integer
+        jobRoute:
+          type: string
+        uploadRoute:
+          type: string
+        downloadRoute:
+          type: string
+        sessionScopedArtifacts:
+          type: boolean
+        operations:
+          type: array
+          items:
+            type: string
+        sources:
+          type: array
+          items:
+            type: string
+        limits:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+    AnkiJobResponse:
+      type: object
+      description: Anki 导出作业状态。
+      properties:
+        jobId:
+          type: string
+        state:
+          type: string
+        operation:
+          type: string
+        progress:
+          type: number
+        artifacts:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              mimeType:
+                type: string
+              size:
+                type: integer
+            additionalProperties: true
+        code:
+          type: string
+      additionalProperties: true
+    DocumentExportPlanResponse:
+      type: object
+      description: 文档导出计划状态。
+      properties:
+        planId:
+          type: string
+        state:
+          type: string
+        exportId:
+          type: string
+        exportRoute:
+          type: string
+        downloadRoute:
+          type: string
+        selectedPageCount:
+          type: integer
+        progress:
+          type: number
+        code:
+          type: string
+      additionalProperties: true
     LegacySyncStatusResponse:
       type: object
       description: 整机的同步诊断快照。不含笔记正文、文档名、账号与云端记录标识。
