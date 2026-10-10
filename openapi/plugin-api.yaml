@@ -3352,6 +3352,117 @@ paths:
               body: { text: '这句话是本段的中心句。', confirm: true }
             });
             if (r.error) mn.log(r.error.code);
+  /notes/{noteid}/comments/fold:
+    post:
+      tags:
+        - 卡片与摘录
+      summary: 折叠或展开卡片批注
+      operationId: postNotesNoteidCommentsFold
+      description: |
+        修改一条或多条批注的折叠状态。该接口改的是批注列表里的 Comment 级状态，不是脑图分支的
+        `collapsed` / `mindclose` 状态。
+
+        调用前先读取 `GET /notes/{noteid}/comments`。请求里的 `expectedRevision` 必须使用该响应顶层
+        的 `revision`。`revision` 属于当前卡片的完整批注投影，不在单条批注上。
+
+        `targets` 支持两种定位方式：
+
+        - `{ "index": 1 }`：按 `GET /notes/{noteid}/comments` 返回的 1 起始序号定位。序号 0 不是批注。
+        - `{ "ownerNoteId": "...", "commentId": "..." }`：按实际归属卡片与稳定批注身份定位。
+
+        较早的批注可能没有 `commentId`，读取时返回 `null`。这类批注首次修改建议用 `index` 定位。
+        引用卡显示原卡共享批注时，应在当前显示用的卡片 `noteid` 上调用本接口；宿主会把共享批注写回
+        实际 `ownerNoteId`。
+      parameters:
+        - $ref: '#/components/parameters/Noteid'
+      responses:
+        '200':
+          description: 批注折叠结果。看 `persisted` 与是否存在 `error` 判断写入是否成功。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentFoldResponse'
+              examples:
+                changed:
+                  summary: 实际修改成功
+                  value:
+                    persisted: true
+                    noteid: D3085422-2CB9-4B68-A78D-DEE351CF9C38
+                    collapsed: true
+                    requestedCount: 1
+                    changedCount: 1
+                    affectedOwnerNoteIds:
+                      - D3085422-2CB9-4B68-A78D-DEE351CF9C38
+                    revision: ccbf2fc6b50a1b61d4aa62f94b4d9589f0a7f3c1e2d5a1b3c4d5e6f708192a3b
+                    comments:
+                      - index: 1
+                        ownerNoteId: D3085422-2CB9-4B68-A78D-DEE351CF9C38
+                        commentId: 1F4C2A90-6C2B-4E1F-9F3A-2B7C1D5E8A44
+                        collapsed: true
+                        type: TextNote
+                        text: 这句话是本段的中心句。
+                unchanged:
+                  summary: 目标原本就是请求状态
+                  value:
+                    persisted: true
+                    noteid: D3085422-2CB9-4B68-A78D-DEE351CF9C38
+                    collapsed: true
+                    requestedCount: 1
+                    changedCount: 0
+                    affectedOwnerNoteIds: []
+                    revision: ccbf2fc6b50a1b61d4aa62f94b4d9589f0a7f3c1e2d5a1b3c4d5e6f708192a3b
+                    comments:
+                      - index: 1
+                        ownerNoteId: D3085422-2CB9-4B68-A78D-DEE351CF9C38
+                        commentId: 1F4C2A90-6C2B-4E1F-9F3A-2B7C1D5E8A44
+                        collapsed: true
+                        type: TextNote
+                        text: 这句话是本段的中心句。
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentFoldRequest'
+            examples:
+              byIndex:
+                summary: 按序号折叠
+                value:
+                  targets:
+                    - index: 1
+                  collapsed: true
+                  expectedRevision: 8452e2e28e31c4cb1e8a789a8f329d6a73689877962366fc58eb498535a92278
+                  confirm: true
+              byCommentId:
+                summary: 按批注身份展开
+                value:
+                  targets:
+                    - ownerNoteId: D3085422-2CB9-4B68-A78D-DEE351CF9C38
+                      commentId: 1F4C2A90-6C2B-4E1F-9F3A-2B7C1D5E8A44
+                  collapsed: false
+                  expectedRevision: ccbf2fc6b50a1b61d4aa62f94b4d9589f0a7f3c1e2d5a1b3c4d5e6f708192a3b
+                  confirm: true
+      x-codeSamples:
+        - lang: javascript
+          label: 折叠第一条批注
+          source: |
+            const state = await mn.api('/notes/' + noteid + '/comments');
+            if (state.error) throw new Error(state.error.code);
+
+            const r = await mn.api('/notes/' + noteid + '/comments/fold', {
+              method: 'POST',
+              body: {
+                targets: [{ index: 1 }],
+                collapsed: true,
+                expectedRevision: state.revision,
+                confirm: true
+              }
+            });
+            if (r.error) mn.log(r.error.code);
   /notes/{noteid}/comments/{index}:
     post:
       tags:
@@ -11344,6 +11455,75 @@ components:
         confirm:
           type: boolean
           description: 必填。由 MarginNote 自动补上。
+    CommentFoldTarget:
+      type: object
+      description: |
+        批注折叠目标。只能使用 `index` 或 `ownerNoteId` + `commentId` 其中一种定位方式。
+        `index` 来自 `GET /notes/{noteid}/comments`，从 1 开始。较早的批注可能没有 `commentId`，
+        这类条目使用 `index` 定位。
+      properties:
+        index:
+          type: integer
+          minimum: 1
+        ownerNoteId:
+          type: string
+          description: 批注实际归属卡片的 noteid。
+        commentId:
+          type: string
+          description: 稳定批注身份，来自 `GET /notes/{noteid}/comments` 的 `commentId`。
+      oneOf:
+        - required:
+            - index
+        - required:
+            - ownerNoteId
+            - commentId
+    CommentFoldRequest:
+      type: object
+      required:
+        - targets
+        - collapsed
+        - expectedRevision
+        - confirm
+      properties:
+        targets:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/CommentFoldTarget'
+          description: 要折叠或展开的批注。重复目标返回 `422 INVALID_INPUT`。
+        collapsed:
+          type: boolean
+          description: "`true` 折叠，`false` 展开。"
+        expectedRevision:
+          type: string
+          description: "`GET /notes/{noteid}/comments` 响应顶层的 `revision`。读写之间批注投影变化时返回 `409 COMMENT_CHANGED`。"
+        confirm:
+          type: boolean
+          description: 必填。由 MarginNote 自动补上。
+    CommentFoldResponse:
+      allOf:
+        - $ref: '#/components/schemas/WriteAck'
+        - type: object
+          properties:
+            collapsed:
+              type: boolean
+              description: 本次请求写入的目标状态。
+            requestedCount:
+              type: integer
+              description: 请求里的目标数量。
+            affectedOwnerNoteIds:
+              type: array
+              items:
+                type: string
+              description: 实际发生改动的归属卡片。无状态变化时为空数组。
+            revision:
+              type: string
+              description: 写入后重新计算的批注投影版本号。
+            comments:
+              type: array
+              items:
+                $ref: '#/components/schemas/CommentItem'
     FoldIntoSubMapRequest:
       type: object
       required:
@@ -12252,9 +12432,27 @@ components:
           type: string
         fieldLabel:
           type: string
+        cardAnnotation:
+          type: boolean
+          description: 该批注是否带卡片批注标记。
+        annotationVersion:
+          type: number
+        reviewAnnotation:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: number
+        practice:
+          type: object
+          additionalProperties: true
     CommentsResponse:
       type: object
       properties:
+        noteid:
+          type: string
+          description: 本次读取的卡片。
+        bridgeApiVersion:
+          type: string
         revision:
           type: string
           description: 批注的版本号。更新与删除批注都要携带该版本号。
