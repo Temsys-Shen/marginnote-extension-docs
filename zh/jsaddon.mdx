@@ -3,5 +3,171 @@ title: "面板之外"
 ---
 
 <Warning>
-  本文尚未完成
+  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
 </Warning>
+
+HTML 面板适合编写界面与数据交互逻辑。需要访问 MN 的原生对象、注册生命周期方法、调整面板上限尺寸，或把部分能力封装给页面调用时，可以在插件根目录增加 `main.js`。
+
+`main.js` 与 `index.html` 处在不同运行环境中。`index.html` 运行在网页面板里，通过 `window.mn` 调用面板接口；`main.js` 运行在插件的 JavaScriptCore 环境里，通过 JSB 调用 MN 暴露的原生对象。页面需要调用 `main.js` 时，使用 `mn.call(name, data)`。
+
+# 文件结构
+
+最小结构如下：
+
+<Tree>
+  <Tree.Folder name="project" defaultOpen>
+    <Tree.File name="mnaddon.json" />
+    <Tree.File name="index.html" />
+    <Tree.File name="main.js" />
+  </Tree.Folder>
+</Tree>
+
+`mnaddon.json` 仍然用 `panel` 指定 HTML 面板入口：
+
+```json mnaddon.json
+{
+  "addonid": "mn.hello",
+  "title": "你好世界",
+  "version": "0.1.0",
+  "author": "插件作者",
+  "marginnote_version_min": "4.5.0",
+  "immersiveOnly": true,
+  "panel": "index.html"
+}
+```
+
+`main.js` 放在插件根目录即可。MN 加载插件时会执行该文件，并调用其中的 `JSB.newAddon(mainPath)`。该函数需要返回一个继承自 `JSExtension` 的类。
+
+# 基本入口
+
+下面的 `main.js` 完成了常用初始化工作：
+
+```javascript main.js
+JSB.newAddon = function (mainPath) {
+  var AddonClass = JSB.defineClass(
+    "HelloAddon : JSExtension",
+    {
+      sceneWillConnect: function () {
+        var panel = AddonWebPanel.panel();
+        panel.maxContentHeight = 760;
+
+        panel.showMessage = function (data) {
+          var text = data && data.text ? String(data.text) : "已收到";
+          Application.sharedInstance().showHUD(text, self.window, 2);
+          return { ok: true, text: text };
+        };
+      },
+
+      notebookWillOpen: function (topicid) {
+        this.topicid = topicid;
+      },
+
+      notebookWillClose: function (topicid) {
+        this.topicid = null;
+      }
+    },
+    {}
+  );
+
+  return AddonClass;
+};
+```
+
+其中：
+
+- `JSB.newAddon(mainPath)` 是插件入口。`mainPath` 表示插件包根目录，可用于拼接包内资源路径。
+- `JSB.defineClass("HelloAddon : JSExtension", 实例成员, 类成员)` 定义插件类。类名可自行命名，但需要继承 `JSExtension`。
+- `sceneWillConnect` 在插件窗口即将连接时触发，适合做轻量初始化与面板配置。
+- `notebookWillOpen(topicid)` 在学习集打开时触发，适合记录当前学习集。
+- `AddonWebPanel.panel()` 返回当前 HTML 面板对应的面板对象。通过该对象可以调整面板配置，也可以暴露供 `mn.call` 调用的方法。
+
+# 从页面调用 main.js
+
+在页面中使用 `mn.call(name, data)` 调用 `main.js` 暴露的方法：
+
+```html index.html
+<!DOCTYPE html>
+<html>
+<body>
+  <button id="send">发送到 main.js</button>
+  <pre id="out"></pre>
+
+  <script>
+    document.getElementById("send").onclick = async function () {
+      var r = await mn.call("showMessage", { text: "来自 HTML 面板" });
+      document.getElementById("out").textContent = JSON.stringify(r, null, 2);
+    };
+  </script>
+</body>
+</html>
+```
+
+`mn.call` 的第一个参数是方法名，第二个参数是传给 `main.js` 的数据。返回值会作为 Promise 的结果回到页面。建议传入普通对象、数组、字符串、数字与布尔值；原生对象不适合直接返回给页面。
+
+若页面只需要读写 MN 数据，优先使用 `mn.api`。若页面需要执行原生对象调用、访问生命周期中保存的状态，或复用 `main.js` 中已经封装的能力，再使用 `mn.call`。
+
+# 调整面板上限高度
+
+HTML 面板高度会受到最大内容高度限制。`mnaddon.json` 可以用 `panelMaxHeight` 设置初始值；需要在运行时改变该上限时，可在 `main.js` 中修改：
+
+```javascript main.js
+JSB.newAddon = function (mainPath) {
+  var AddonClass = JSB.defineClass("HeightAddon : JSExtension", {
+    sceneWillConnect: function () {
+      var panel = AddonWebPanel.panel();
+      panel.maxContentHeight = 760;
+    }
+  }, {});
+
+  return AddonClass;
+};
+```
+
+页面侧仍然用 `mn.fit()`、`mn.height(h)` 或 `mn.size(w, h)` 调整实际尺寸。`maxContentHeight` 只决定允许达到的上限。
+
+# 使用 MN 原生对象
+
+`main.js` 可以访问 JSB 暴露的原生对象，例如 `Application`、`Database`、`NSFileManager`、`NSUserDefaults`、`NSTimer`、`UIColor`、`UIViewController` 等。完整对象、属性与方法可参考 [MarginNote 插件开发文档](https://mn-docs.museday.top)。
+
+常用入口如下：
+
+```javascript main.js
+var app = Application.sharedInstance();
+var studyController = app.studyController(self.window);
+var database = Database.sharedInstance();
+```
+
+调用原生对象时，需要注意执行时机。`sceneWillConnect` 只表示窗口即将连接，此时未必已经打开学习集；访问学习集、脑图、文档与卡片时，通常应放在 `notebookWillOpen`、`documentDidOpen`、卡片命令回调或页面触发的方法中，并依据当前界面状态做空值判断。
+
+# 使用边界
+
+`main.js` 适合承担以下工作：
+
+- 注册窗口、学习集、文档等生命周期方法。
+- 访问网页面板无法直接访问的原生对象。
+- 统一封装需要由页面触发的原生能力。
+- 修改 `AddonWebPanel.panel()` 上的运行时配置。
+- 通过 `NSUserDefaults` 保存少量插件设置。
+
+普通页面逻辑仍建议留在 `index.html` 或前端脚本中。数据读写优先使用 `mn.api`，事件接收优先使用 `mn.on`，面板尺寸优先使用 `mn.fit`、`mn.height` 与 `mn.size`。只有需要进入插件 JavaScriptCore 环境时，再把逻辑放入 `main.js`。
+
+# 补充说明
+
+## main.js 与 window.mn 的关系
+
+`main.js` 不能替代 `window.mn`。二者处于不同运行环境，职责不同。页面渲染、按钮事件、普通数据读写适合放在 HTML 面板中；原生对象调用、生命周期处理和跨页面复用逻辑适合放在 `main.js` 中。
+
+## mn.call 的参数
+
+不建议直接传递原生卡片对象。页面与 `main.js` 之间应传递可序列化数据，例如卡片 id、学习集 id、字符串配置与简单结果。`main.js` 收到 id 后，可以通过 `Database.sharedInstance()` 或其他原生对象重新读取需要的数据。
+
+## main.js 的执行时机
+
+插件加载时，MN 执行 `main.js` 并调用 `JSB.newAddon(mainPath)`。返回的类由 MN 实例化，随后在窗口、学习集和文档状态变化时触发生命周期方法。
+
+# 相关文档
+
+- [使用 window.mn 与 MN 进行交互](/zh/sdk)
+- [数据交互](/zh/data-interact)
+- [UI 控制](/zh/ui)
+- [事件系统](/zh/events)
