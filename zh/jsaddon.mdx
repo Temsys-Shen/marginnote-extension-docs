@@ -2,10 +2,6 @@
 title: "面板之外"
 ---
 
-<Warning>
-  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
-</Warning>
-
 除了使用 Web 技术栈进行标准的场景插件开发外，也可在插件根目录增加 `main.js`，以融合场景插件和经典插件的方式进行插件开发。
 
 使用该方式进行开发的场景包括但不限于：
@@ -46,151 +42,116 @@ title: "面板之外"
 
 `main.js` 需要放在插件根目录。MN 加载插件时会**立即**执行该文件，并调用其中的 `JSB.newAddon(mainPath)`。该函数需要返回一个继承自 `JSExtension` 的类。
 
-# 基本入口
+# 插件入口
 
-加入 `main.js` 后，插件需要主动完成面板的创建、加载、显示、持有和清理。`AddonWebPanel.panel()` 只负责创建新的面板对象，不负责查找已经显示的面板。插件应保存面板对象，否则后续发送事件、调整高度或关闭面板时，相关操作可能无法作用于实际显示的面板。
-
-下面的示例使用 `state` 保存当前窗口的面板。需要支持多窗口的插件，应按窗口或 scene 保存面板对象，避免多个窗口共用同一个面板变量。
+加入 `main.js` 后，插件入口将变为 `main.js`。下面是一种经典写法：
 
 ```javascript main.js
 JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包根目录
-  var state = {
-    panel: null
-  };
-
-  function studyController() {
-    return Application.sharedInstance().studyController(self.window);
-  }
-```
-
-关闭面板时，先清空保存的引用，再解除回调并收起浮层。
-
-```javascript main.js
-  function closePanel() {
-    var panel = state.panel;
-    state.panel = null;
-    if (!panel) return;
-
-    panel.onMessage = null;
-    panel.hideFloating();
-  }
-```
-
-打开面板时，先取得学习集控制器，再创建、配置、加载和显示面板。
-
-```javascript main.js
-  function openPanel() {
-    var controller = studyController();
-    if (!controller) {
-      Application.sharedInstance().showHUD("请先打开学习集", self.window, 2);
-      return;
-    }
-
-    if (state.panel) {
-      state.panel.showFloatingIn(controller);
-      return;
-    }
-
-    var panel = AddonWebPanel.panel(); // 为当前插件创建一个新的 HTML 面板
-    if (!panel) return;
-
-    state.panel = panel;
-    panel.maxContentHeight = 760;
-    bindPanelMessage(panel);
-
-    if (!panel.loadPanel()) {
-      closePanel();
-      Application.sharedInstance().showHUD("面板加载失败", self.window, 2);
-      return;
-    }
-
-    panel.showFloatingIn(controller);
-  }
-```
-
-生命周期方法用于在插件启用、学习集关闭和插件停用时调用上述方法。
-
-```javascript main.js
   var AddonClass = JSB.defineClass(
     "HelloAddon : JSExtension", // 插件名 : JSExtension
     {
-      sceneWillConnect: function () { // 在插件即将启用时触发
-        openPanel();
-      },
-
-      notebookWillOpen: function (topicid) { // 在学习集打开时触发
-        self.topicid = topicid;
-      },
-
-      notebookWillClose: function (topicid) {
-        self.topicid = null;
-        closePanel();
-      },
-
-      sceneWillDisconnect: function () {
-        closePanel();
-      }
-    },// 实例成员
-    {}// 类成员
+      sceneWillConnect: function () {}, // 在插件即将启用时触发
+      notebookWillOpen: function (topicid) {}, // 在学习集打开时触发
+      notebookWillClose: function (topicid) {} // 在学习集打开时触发
+      // 添加更多实例成员...
+    },
+    {
+      addonDidConnect: function () {},
+      addonWillDisconnect: function () {},
+      // 添加更多类成员...
+    }
   );
 
   return AddonClass;
 };
 ```
 
-# 从面板调用 main.js
+<Note>
+  在`JSB.defineClass`定义的实例成员中，使用`self`而非`this`来引用 JSB 定义的类（如`JSExtension`）的实例。关于 JSB 定义的类的可用成员详见[使用 MN 原生对象](#使用MN原生对象)
+</Note>
 
-面板页面通过 `mn.call(name, payload)` 调用 `main.js`。宿主会把请求转给当前面板对象的 `onMessage(name, payload)`。因此，`main.js` 侧的接收入口应使用 `panel.onMessage`，不应使用 `panel.showMessage`、`panel.foo` 一类动态方法。
+# 手动控制面板
 
-`onMessage` 的返回值会作为 `mn.call()` 的结果返回页面。返回值必须能够进行 JSON 序列化。未设置 `onMessage`、插件被禁用或暂停、回调抛出异常、返回值无法序列化时，页面侧 Promise 会被拒绝。页面侧建议使用 `try/catch` 处理错误。
+加入 `main.js` 后，点击插件按钮将**不再**自动打开面板，面板的创建、加载、显示和清理都要由插件自己完成。
+
+例如下面定义了一个打开面板并设置最大高度的函数。
 
 ```javascript main.js
-function bindPanelMessage(panel) {
-  panel.onMessage = function (name, payload) {
+const openPanel = (context) => {
+  const panel = AddonWebPanel.panel();
+  panel.maxContentHeight = 760;
+
+  panel.loadPanel();
+  panel.showFloatingIn(Application.sharedInstance().studyController(context.window));
+
+  return panel;
+};
+```
+
+注意，由于显示面板需要传入`studyController`实例，而`studyController`实例又需要通过插件实例获取，因此该函数需要为 `context` 参数传入在 JSB 定义的类的实例成员方法中的 `self` 。
+
+# 双向通信
+
+## 从面板调用 main.js
+
+面板调用 `mn.call(name, payload)` 时会触发 `main.js`的 `panel.onMessage(name, payload)`。
+
+`onMessage` 的返回值会进行序列化作为 `mn.call()` 的结果返回页面。
+
+下面是具体例子：
+
+```javascript main.js
+const bindPanelMessage = (panel, context) => {
+  panel.onMessage = (name, payload) => {
     if (name === "showMessage") {
-      var text = payload && payload.text != null ? String(payload.text) : "已收到";
-      Application.sharedInstance().showHUD(text, self.window, 2);
-      return { ok: true, text: text };
+      Application.sharedInstance().showHUD(payload.text, context.window, 2);
+      return { ok: true };
     }
 
-    return { ok: false, error: "unknown_action", name: String(name) };
+    return {};
   };
-}
+};
 ```
+
+面板写法如下：
 
 ```html index.html
 <button id="send">发送到 main.js</button>
 <pre id="out"></pre>
 
 <script>
-  var out = document.getElementById("out");
+  const out = document.getElementById("out");
 
   document.getElementById("send").onclick = async function () {
-    try {
-      var result = await mn.call("showMessage", { text: "来自 HTML 面板" });
-      out.textContent = JSON.stringify(result, null, 2);
-    } catch (error) {
-      out.textContent = "调用失败：" + String(error);
-    }
+    const result = await mn.call("showMessage", { text: "来自 HTML 面板" });
+    out.textContent = JSON.stringify(result, null, 2);
   };
 </script>
 ```
 
-# 从 main.js 调用面板
+`mn.call`的 Promise 返回值在包括但不限于下列情形时会进入失败分支：
 
-`main.js` 通过 `panel.post(event, data)` 向已经加载的面板发送事件。页面侧通过 `window.addEventListener("mn:<event>", handler)` 接收事件，并从 `event.detail` 读取数据。
+- 未注册`onMessage`
+- 插件被禁用或暂停
+- 回调抛出异常
+- 返回值无法序列化
+
+## 从 main.js 调用面板
+
+`main.js` 可以通过调用 `panel.post(event, data)` 向已经加载的面板发送事件。面板通过 `window.addEventListener("mn:<event>", handler)` 接收事件，并从 `event.detail` 读取数据。
+
+下面是具体例子：
 
 ```javascript main.js
-function sendStatusToPanel() {
-  var panel = state.panel;
-  if (!panel) return;
-
+const sendStatusToPanel = (panel, message) => {
   panel.post("status", {
-    topicid: self.topicid || null,
-    message: "来自 main.js"
+    message: `main.js发来消息：${message}`
   });
-}
+};
 ```
+
+面板写法如下：
 
 ```html index.html
 <pre id="status"></pre>
@@ -203,7 +164,23 @@ function sendStatusToPanel() {
 </script>
 ```
 
-`post()` 在页面加载完成前调用时，宿主会先缓存事件，并在页面就绪后投递。插件仍应只对当前持有的面板实例调用 `post()`，避免向已经关闭或替换的旧面板继续发送事件。
+<Tip>
+  `post()` 在页面加载完成前调用时，事件会先被缓存，并在页面就绪后投递。
+</Tip>
+
+# 使用 MN 原生对象
+
+`main.js` 可访问 JSB 暴露的原生对象，例如 `Application`、`Database`、`NSFileManager`、`NSUserDefaults`、`NSTimer`、`UIColor`、`UIViewController` 等。
+
+例如：
+
+```javascript
+const app = Application.sharedInstance();
+const studyController = app.studyController(self.window);
+const database = Database.sharedInstance();
+```
+
+完整对象、属性与方法请参考 [MarginNote 插件开发文档](https://mn-docs.museday.top)。
 
 # 面板对象常用方法
 
@@ -211,31 +188,31 @@ function sendStatusToPanel() {
 
 ### `AddonWebPanel.panel()`
 
-创建一个新的面板对象。该方法不会自动读取 `mnaddon.json`，也不会自动显示面板；通常需要继续调用 `loadPanel()` 或 `loadHTML()`，再显示并保存引用。
+创建一个新的面板对象。
 
 ### `panel.loadPanel()`
 
-按 `mnaddon.json` 的 `panel` 字段读取包内 HTML 文件。文件不存在、未声明 `panel` 或路径越界时返回 `false`。这是混合插件加载 `index.html` 的推荐方式。
+按 `mnaddon.json` 的 `panel` 字段读取包内 HTML 文件。文件不存在、未声明 `panel` 或路径越界时返回 `false`。这是加载面板的推荐方式。
 
 ### `panel.loadHTML(html)`
 
-直接加载一段 HTML 字符串。该方法不读取包内 `panel` 字段，适合调试或动态生成简单页面；页面需要引用包内资源时，优先使用 `loadPanel()`。
+直接加载一段 HTML 字符串作为面板的源代码。
 
 ## 双向通信
 
 ### `panel.onMessage = function (name, payload) { ... }`
 
-接收面板侧 `mn.call(name, payload)` 的入口。回调应返回可 JSON 序列化的对象或数组；无法处理的动作建议返回结构化错误对象。
+接收面板侧 `mn.call(name, payload)` 的入口。
 
 ### `panel.post(event, data)`
 
-从 `main.js` 向面板页面发送事件。页面侧监听 `mn:<event>`，从 `event.detail` 读取数据。
+从 `main.js` 向面板页面以 `mn:<event>` 的命名格式发送事件。
 
 ## 媒体数据
 
 ### `panel.putMedia(key, data, type)`
 
-把二进制图片数据交给面板。页面通过 `/media/<key>` 引用该数据。`data` 为空时，宿主会删除对应 key。
+将二进制图片数据交给面板。页面通过 `/media/<key>` 引用该数据。`data` 为空时，宿主会删除对应 key。
 
 ### `panel.clearMedia()`
 
@@ -245,11 +222,11 @@ function sendStatusToPanel() {
 
 ### `panel.showFloatingIn(studyController)`
 
-把面板作为常驻浮层显示到学习集控制器中。面板已经显示时，再次调用会把面板置于前台并刷新布局。
+将面板作为常驻浮层显示到学习集控制器中。面板已经显示时，再次调用会将面板置于前台并刷新布局。
 
 ### `panel.showFloatingInMode(studyController, mode)`
 
-按指定形态显示面板。`mode` 可使用宿主支持的形态，例如 `"mini"` 或 `"workspace"`。
+按指定形态显示面板。`mode` 可使用 `"mini"` 或 `"workspace"`。
 
 ### `panel.hideFloating()`
 
@@ -259,50 +236,4 @@ function sendStatusToPanel() {
 
 ### `panel.teardown()`
 
-显式断开面板、WebView、回调和未完成请求之间的引用关系，避免旧面板继续占用资源。`hideFloating()` 会一并执行清理。插件通过其他展示方式关闭面板时，应主动调用 `teardown()`。该方法支持重复调用。
-
-# 调整面板上限高度
-
-HTML 面板高度会受到最大内容高度限制。`mnaddon.json` 使用 `panelMaxHeight` 设置初始值；需要在运行时改变该上限时，可在 `main.js` 中修改：
-
-```javascript main.js
-JSB.newAddon = function (mainPath) {
-  var AddonClass = JSB.defineClass("HeightAddon : JSExtension", {
-    sceneWillConnect: function () {
-      var panel = AddonWebPanel.panel();
-      panel.maxContentHeight = 760;
-      if (panel.loadPanel()) {
-        panel.showFloatingIn(Application.sharedInstance().studyController(self.window));
-      }
-    }
-  }, {});
-
-  return AddonClass;
-};
-```
-
-面板侧仍然用 `mn.fit()`、`mn.height(h)` 或 `mn.size(w, h)` 调整实际尺寸。`maxContentHeight` 只决定允许达到的上限。该属性必须设置在实际显示的面板实例上；重新创建面板后，旧实例上的设置不会自动作用到新实例。
-
-# 混合插件与清单能力的分工
-
-纯 HTML 场景插件通常依赖 `mnaddon.json` 提供面板入口、尺寸和宿主事件声明。加入 `main.js` 后，清单里的 `panel` 仍然由 `loadPanel()` 使用，`panelMaxHeight` 仍可作为初始配置；但按钮入口、面板打开触发时机、面板对象按窗口持有的方式、关闭时的清理流程，以及从原生生命周期向页面转发的事件，都应由 `main.js` 明确接线。
-
-需要兼容纯 HTML 模式的插件，建议分别验证“没有 `main.js` 的插件包”和“带 `main.js` 的混合插件包”：前者确认清单自动行为，后者确认 `main.js` 的加载、显示、通信和清理链路。
-
-# 使用 MN 原生对象
-
-`main.js` 可访问 JSB 暴露的原生对象，例如 `Application`、`Database`、`NSFileManager`、`NSUserDefaults`、`NSTimer`、`UIColor`、`UIViewController` 等。
-
-例如：
-
-```javascript main.js
-var app = Application.sharedInstance();
-var studyController = app.studyController(self.window);
-var database = Database.sharedInstance();
-```
-
-<Note>
-  在`JSB.defineClass`定义的实例成员中，使用`self`而非`this`来引用JSB 定义的类（如`JSExtension`）的实例。
-</Note>
-
-完整对象、属性与方法请参考 [MarginNote 插件开发文档](https://mn-docs.museday.top)。
+显式断开面板、WebView、回调和未完成请求之间的引用关系，避免旧面板继续占用资源。`hideFloating()` 会一并执行清理。插件通过其他展示方式关闭面板时，应主动调用 `teardown()`。
