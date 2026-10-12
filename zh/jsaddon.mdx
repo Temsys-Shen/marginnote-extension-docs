@@ -48,30 +48,84 @@ title: "面板之外"
 
 # 基本入口
 
-下面的 `main.js` 完成了常用初始化工作：
+加入 `main.js` 后，插件需要自己完成面板的创建、加载、显示、持有和清理。`AddonWebPanel.panel()` 只会创建一个新的面板对象，并不等于“取得当前已经显示的面板”；如果没有把这个对象保存下来，后续从 `main.js` 向面板发送事件、调整高度或关闭面板，都可能作用不到实际显示的实例。
+
+下面的示例用一个最小的 `state` 保存当前窗口的面板。实际插件如果要支持多窗口，应按窗口或 scene 拆分保存，不要让多个窗口共用同一个面板变量。
 
 ```javascript main.js
 JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包根目录
+  var state = {
+    panel: null
+  };
+
+  function studyController() {
+    return Application.sharedInstance().studyController(self.window);
+  }
+
+  function closePanel() {
+    var panel = state.panel;
+    state.panel = null;
+    if (!panel) return;
+
+    panel.onMessage = null;
+    panel.hideFloating();
+  }
+
+  function openPanel() {
+    var controller = studyController();
+    if (!controller) {
+      Application.sharedInstance().showHUD("请先打开学习集", self.window, 2);
+      return;
+    }
+
+    if (state.panel) {
+      state.panel.showFloatingIn(controller);
+      return;
+    }
+
+    var panel = AddonWebPanel.panel(); // 为当前插件创建一个新的 HTML 面板
+    if (!panel) return;
+
+    state.panel = panel;
+    panel.maxContentHeight = 760;
+
+    panel.onMessage = function (name, payload) {
+      if (name === "showMessage") {
+        var text = payload && payload.text != null ? String(payload.text) : "已收到";
+        Application.sharedInstance().showHUD(text, self.window, 2);
+        return { ok: true, text: text };
+      }
+
+      return { ok: false, error: "unknown_action", name: String(name) };
+    };
+
+    if (!panel.loadPanel()) {
+      closePanel();
+      Application.sharedInstance().showHUD("面板加载失败", self.window, 2);
+      return;
+    }
+
+    panel.showFloatingIn(controller);
+  }
+
   var AddonClass = JSB.defineClass(
     "HelloAddon : JSExtension", // 插件名 : JSExtension
     {
       sceneWillConnect: function () { // 在插件即将启用时触发
-        var panel = AddonWebPanel.panel(); //当前插件的面板对象
-        panel.maxContentHeight = 760;
-
-        panel.showMessage = function (data) {
-          var text = data && data.text ? String(data.text) : "已收到";
-          Application.sharedInstance().showHUD(text, self.window, 2);
-          return { ok: true, text: text };
-        };
+        openPanel();
       },
 
       notebookWillOpen: function (topicid) { // 在学习集打开时触发
-        this.topicid = topicid;
+        self.topicid = topicid;
       },
 
       notebookWillClose: function (topicid) {
-        this.topicid = null;
+        self.topicid = null;
+        closePanel();
+      },
+
+      sceneWillDisconnect: function () {
+        closePanel();
       }
     },// 实例成员
     {}// 类成员
@@ -83,7 +137,98 @@ JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包�
 
 # 从面板调用 main.js
 
+面板页面通过 `mn.call(name, payload)` 调用 `main.js`。宿主会把请求转给当前面板对象的 `onMessage(name, payload)`；因此接收入口是 `panel.onMessage`，不是在 `panel` 上按方法名挂 `panel.showMessage`、`panel.foo` 之类的动态方法。
+
+`onMessage` 的返回值会作为 `mn.call()` 的结果回到页面，必须是可 JSON 序列化的值。没有设置 `onMessage`、插件被禁用或暂停、回调抛异常、返回不可序列化值时，页面侧 Promise 会被拒绝，建议总是写 `try/catch` 展示错误。
+
+```html index.html
+<button id="send">发送到 main.js</button>
+<pre id="out"></pre>
+
+<script>
+  var out = document.getElementById("out");
+
+  document.getElementById("send").onclick = async function () {
+    try {
+      var result = await mn.call("showMessage", { text: "来自 HTML 面板" });
+      out.textContent = JSON.stringify(result, null, 2);
+    } catch (error) {
+      out.textContent = "调用失败：" + String(error);
+    }
+  };
+</script>
+```
+
 # 从 main.js 调用面板
+
+`main.js` 可以用 `panel.post(event, data)` 向已经加载的面板发送事件。页面侧用 `window.addEventListener("mn:<event>", handler)` 接收，事件数据在 `event.detail` 中。
+
+```javascript main.js
+function sendStatusToPanel() {
+  var panel = state.panel;
+  if (!panel) return;
+
+  panel.post("status", {
+    topicid: self.topicid || null,
+    message: "来自 main.js"
+  });
+}
+```
+
+```html index.html
+<pre id="status"></pre>
+
+<script>
+  window.addEventListener("mn:status", function (event) {
+    document.getElementById("status").textContent =
+      JSON.stringify(event.detail, null, 2);
+  });
+</script>
+```
+
+如果 `post()` 发生在页面加载完成前，宿主会先排队，等页面就绪后再投递；但插件仍应只对自己持有的当前面板实例调用 `post()`，不要对已经关闭或被替换的旧面板继续发送事件。
+
+# 面板对象常用方法
+
+`AddonWebPanel.panel()`
+
+创建一个新的面板对象。它不会自动读取 `mnaddon.json`，也不会自动显示；通常需要继续调用 `loadPanel()` 或 `loadHTML()`，再显示并保存引用。
+
+`panel.loadPanel()`
+
+按 `mnaddon.json` 的 `panel` 字段读取包内 HTML 文件。文件不存在、未声明 `panel` 或路径越界时返回 `false`。这是混合插件加载 `index.html` 的推荐方式。
+
+`panel.loadHTML(html)`
+
+直接加载一段 HTML 字符串。它不读取包内 `panel` 字段，适合调试或动态生成简单页面；如果页面需要引用包内资源，优先使用 `loadPanel()`。
+
+`panel.onMessage = function (name, payload) { ... }`
+
+接收面板侧 `mn.call(name, payload)` 的入口。回调应返回可 JSON 序列化的对象或数组；无法处理的动作建议返回结构化错误对象。
+
+`panel.post(event, data)`
+
+从 `main.js` 向面板页面发送事件。页面侧监听 `mn:<event>`，从 `event.detail` 读取数据。
+
+`panel.putMedia(key, data, type)` 与 `panel.clearMedia()`
+
+把二进制图片数据交给面板，页面可以通过 `/media/<key>` 引用。`putMedia()` 的 `data` 为空时会删除对应 key；`clearMedia()` 清空当前面板的媒体缓存。大图不要塞进 JSON 或 `post()` 数据里。
+
+`panel.showFloatingIn(studyController)`
+
+把面板作为常驻浮层显示到学习集控制器中。已经显示时再次调用会把面板带到前面并刷新布局。
+
+`panel.showFloatingInMode(studyController, mode)`
+
+按指定形态显示一次，`mode` 可使用宿主支持的形态，例如 `"mini"` 或 `"workspace"`。
+
+`panel.hideFloating()`
+
+收起浮层，并触发面板清理。主动关闭面板时优先调用它。
+
+`panel.teardown()`
+
+显式断开面板、WebView、回调和未完成请求之间的引用关系，避免旧面板继续占用资源。`hideFloating()` 会顺带清理；如果插件用其他展示方式关闭面板，应主动调用 `teardown()`。该方法是幂等的。
 
 # 调整面板上限高度
 
@@ -95,6 +240,9 @@ JSB.newAddon = function (mainPath) {
     sceneWillConnect: function () {
       var panel = AddonWebPanel.panel();
       panel.maxContentHeight = 760;
+      if (panel.loadPanel()) {
+        panel.showFloatingIn(Application.sharedInstance().studyController(self.window));
+      }
     }
   }, {});
 
@@ -102,7 +250,13 @@ JSB.newAddon = function (mainPath) {
 };
 ```
 
-面板侧仍然用 `mn.fit()`、`mn.height(h)` 或 `mn.size(w, h)` 调整实际尺寸。`maxContentHeight` 只决定允许达到的上限。
+面板侧仍然用 `mn.fit()`、`mn.height(h)` 或 `mn.size(w, h)` 调整实际尺寸。`maxContentHeight` 只决定允许达到的上限。这个属性必须设置在实际显示的面板实例上；如果重新创建了面板，旧实例上的设置不会自动作用到新实例。
+
+# 混合插件与清单能力的分工
+
+纯 HTML 场景插件可以主要依赖 `mnaddon.json` 提供面板入口、尺寸和宿主事件声明。加入 `main.js` 后，清单里的 `panel` 仍然由 `loadPanel()` 使用，`panelMaxHeight` 仍可作为初始配置；但按钮入口、何时打开面板、面板对象如何按窗口持有、关闭时如何清理，以及从原生生命周期向页面转发哪些事件，都应由 `main.js` 明确接线。
+
+如果插件还需要兼容纯 HTML 模式，建议把“没有 `main.js` 的包”和“带 `main.js` 的混合包”分开验证：前者确认清单自动行为，后者确认 `main.js` 的加载、显示、通信和清理链路。
 
 # 使用 MN 原生对象
 
