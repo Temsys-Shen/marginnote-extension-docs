@@ -6,7 +6,7 @@ title: "面板之外"
   本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
 </Warning>
 
-除了使用 Web 技术栈进行标准的场景插件开发外，还可以在插件根目录增加 `main.js`，以融合场景插件和经典插件的方式进行插件开发。
+除了使用 Web 技术栈进行标准的场景插件开发外，也可在插件根目录增加 `main.js`，以融合场景插件和经典插件的方式进行插件开发。
 
 使用该方式进行开发的场景包括但不限于：
 
@@ -35,7 +35,7 @@ title: "面板之外"
 ```json mnaddon.json
 {
   "addonid": "mn.hello",
-  "title": "你好世界",
+  "title": "示例插件",
   "version": "0.1.0",
   "author": "插件作者",
   "marginnote_version_min": "4.5.0",
@@ -48,9 +48,9 @@ title: "面板之外"
 
 # 基本入口
 
-加入 `main.js` 后，插件需要自己完成面板的创建、加载、显示、持有和清理。`AddonWebPanel.panel()` 只会创建一个新的面板对象，并不等于“取得当前已经显示的面板”；如果没有把这个对象保存下来，后续从 `main.js` 向面板发送事件、调整高度或关闭面板，都可能作用不到实际显示的实例。
+加入 `main.js` 后，插件需要主动完成面板的创建、加载、显示、持有和清理。`AddonWebPanel.panel()` 只负责创建新的面板对象，不负责查找已经显示的面板。插件应保存面板对象，否则后续发送事件、调整高度或关闭面板时，相关操作可能无法作用于实际显示的面板。
 
-下面的示例用一个最小的 `state` 保存当前窗口的面板。实际插件如果要支持多窗口，应按窗口或 scene 拆分保存，不要让多个窗口共用同一个面板变量。
+下面的示例使用 `state` 保存当前窗口的面板。需要支持多窗口的插件，应按窗口或 scene 保存面板对象，避免多个窗口共用同一个面板变量。
 
 ```javascript main.js
 JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包根目录
@@ -61,7 +61,11 @@ JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包�
   function studyController() {
     return Application.sharedInstance().studyController(self.window);
   }
+```
 
+关闭面板时，先清空保存的引用，再解除回调并收起浮层。
+
+```javascript main.js
   function closePanel() {
     var panel = state.panel;
     state.panel = null;
@@ -70,7 +74,11 @@ JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包�
     panel.onMessage = null;
     panel.hideFloating();
   }
+```
 
+打开面板时，先取得学习集控制器，再创建、配置、加载和显示面板。
+
+```javascript main.js
   function openPanel() {
     var controller = studyController();
     if (!controller) {
@@ -88,16 +96,7 @@ JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包�
 
     state.panel = panel;
     panel.maxContentHeight = 760;
-
-    panel.onMessage = function (name, payload) {
-      if (name === "showMessage") {
-        var text = payload && payload.text != null ? String(payload.text) : "已收到";
-        Application.sharedInstance().showHUD(text, self.window, 2);
-        return { ok: true, text: text };
-      }
-
-      return { ok: false, error: "unknown_action", name: String(name) };
-    };
+    bindPanelMessage(panel);
 
     if (!panel.loadPanel()) {
       closePanel();
@@ -107,7 +106,11 @@ JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包�
 
     panel.showFloatingIn(controller);
   }
+```
 
+生命周期方法用于在插件启用、学习集关闭和插件停用时调用上述方法。
+
+```javascript main.js
   var AddonClass = JSB.defineClass(
     "HelloAddon : JSExtension", // 插件名 : JSExtension
     {
@@ -137,9 +140,23 @@ JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包�
 
 # 从面板调用 main.js
 
-面板页面通过 `mn.call(name, payload)` 调用 `main.js`。宿主会把请求转给当前面板对象的 `onMessage(name, payload)`；因此接收入口是 `panel.onMessage`，不是在 `panel` 上按方法名挂 `panel.showMessage`、`panel.foo` 之类的动态方法。
+面板页面通过 `mn.call(name, payload)` 调用 `main.js`。宿主会把请求转给当前面板对象的 `onMessage(name, payload)`。因此，`main.js` 侧的接收入口应使用 `panel.onMessage`，不应使用 `panel.showMessage`、`panel.foo` 一类动态方法。
 
-`onMessage` 的返回值会作为 `mn.call()` 的结果回到页面，必须是可 JSON 序列化的值。没有设置 `onMessage`、插件被禁用或暂停、回调抛异常、返回不可序列化值时，页面侧 Promise 会被拒绝，建议总是写 `try/catch` 展示错误。
+`onMessage` 的返回值会作为 `mn.call()` 的结果返回页面。返回值必须能够进行 JSON 序列化。未设置 `onMessage`、插件被禁用或暂停、回调抛出异常、返回值无法序列化时，页面侧 Promise 会被拒绝。页面侧建议使用 `try/catch` 处理错误。
+
+```javascript main.js
+function bindPanelMessage(panel) {
+  panel.onMessage = function (name, payload) {
+    if (name === "showMessage") {
+      var text = payload && payload.text != null ? String(payload.text) : "已收到";
+      Application.sharedInstance().showHUD(text, self.window, 2);
+      return { ok: true, text: text };
+    }
+
+    return { ok: false, error: "unknown_action", name: String(name) };
+  };
+}
+```
 
 ```html index.html
 <button id="send">发送到 main.js</button>
@@ -161,7 +178,7 @@ JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包�
 
 # 从 main.js 调用面板
 
-`main.js` 可以用 `panel.post(event, data)` 向已经加载的面板发送事件。页面侧用 `window.addEventListener("mn:<event>", handler)` 接收，事件数据在 `event.detail` 中。
+`main.js` 通过 `panel.post(event, data)` 向已经加载的面板发送事件。页面侧通过 `window.addEventListener("mn:<event>", handler)` 接收事件，并从 `event.detail` 读取数据。
 
 ```javascript main.js
 function sendStatusToPanel() {
@@ -186,53 +203,67 @@ function sendStatusToPanel() {
 </script>
 ```
 
-如果 `post()` 发生在页面加载完成前，宿主会先排队，等页面就绪后再投递；但插件仍应只对自己持有的当前面板实例调用 `post()`，不要对已经关闭或被替换的旧面板继续发送事件。
+`post()` 在页面加载完成前调用时，宿主会先缓存事件，并在页面就绪后投递。插件仍应只对当前持有的面板实例调用 `post()`，避免向已经关闭或替换的旧面板继续发送事件。
 
 # 面板对象常用方法
 
-`AddonWebPanel.panel()`
+## 创建和加载
 
-创建一个新的面板对象。它不会自动读取 `mnaddon.json`，也不会自动显示；通常需要继续调用 `loadPanel()` 或 `loadHTML()`，再显示并保存引用。
+### `AddonWebPanel.panel()`
 
-`panel.loadPanel()`
+创建一个新的面板对象。该方法不会自动读取 `mnaddon.json`，也不会自动显示面板；通常需要继续调用 `loadPanel()` 或 `loadHTML()`，再显示并保存引用。
+
+### `panel.loadPanel()`
 
 按 `mnaddon.json` 的 `panel` 字段读取包内 HTML 文件。文件不存在、未声明 `panel` 或路径越界时返回 `false`。这是混合插件加载 `index.html` 的推荐方式。
 
-`panel.loadHTML(html)`
+### `panel.loadHTML(html)`
 
-直接加载一段 HTML 字符串。它不读取包内 `panel` 字段，适合调试或动态生成简单页面；如果页面需要引用包内资源，优先使用 `loadPanel()`。
+直接加载一段 HTML 字符串。该方法不读取包内 `panel` 字段，适合调试或动态生成简单页面；页面需要引用包内资源时，优先使用 `loadPanel()`。
 
-`panel.onMessage = function (name, payload) { ... }`
+## 双向通信
+
+### `panel.onMessage = function (name, payload) { ... }`
 
 接收面板侧 `mn.call(name, payload)` 的入口。回调应返回可 JSON 序列化的对象或数组；无法处理的动作建议返回结构化错误对象。
 
-`panel.post(event, data)`
+### `panel.post(event, data)`
 
 从 `main.js` 向面板页面发送事件。页面侧监听 `mn:<event>`，从 `event.detail` 读取数据。
 
-`panel.putMedia(key, data, type)` 与 `panel.clearMedia()`
+## 媒体数据
 
-把二进制图片数据交给面板，页面可以通过 `/media/<key>` 引用。`putMedia()` 的 `data` 为空时会删除对应 key；`clearMedia()` 清空当前面板的媒体缓存。大图不要塞进 JSON 或 `post()` 数据里。
+### `panel.putMedia(key, data, type)`
 
-`panel.showFloatingIn(studyController)`
+把二进制图片数据交给面板。页面通过 `/media/<key>` 引用该数据。`data` 为空时，宿主会删除对应 key。
 
-把面板作为常驻浮层显示到学习集控制器中。已经显示时再次调用会把面板带到前面并刷新布局。
+### `panel.clearMedia()`
 
-`panel.showFloatingInMode(studyController, mode)`
+清空当前面板的媒体缓存。较大的图片数据建议通过媒体缓存传递，避免放入 JSON 或 `post()` 数据。
 
-按指定形态显示一次，`mode` 可使用宿主支持的形态，例如 `"mini"` 或 `"workspace"`。
+## 显示和隐藏
 
-`panel.hideFloating()`
+### `panel.showFloatingIn(studyController)`
 
-收起浮层，并触发面板清理。主动关闭面板时优先调用它。
+把面板作为常驻浮层显示到学习集控制器中。面板已经显示时，再次调用会把面板置于前台并刷新布局。
 
-`panel.teardown()`
+### `panel.showFloatingInMode(studyController, mode)`
 
-显式断开面板、WebView、回调和未完成请求之间的引用关系，避免旧面板继续占用资源。`hideFloating()` 会顺带清理；如果插件用其他展示方式关闭面板，应主动调用 `teardown()`。该方法是幂等的。
+按指定形态显示面板。`mode` 可使用宿主支持的形态，例如 `"mini"` 或 `"workspace"`。
+
+### `panel.hideFloating()`
+
+收起浮层，并触发面板清理。插件主动关闭面板时，优先调用该方法。
+
+## 资源清理
+
+### `panel.teardown()`
+
+显式断开面板、WebView、回调和未完成请求之间的引用关系，避免旧面板继续占用资源。`hideFloating()` 会一并执行清理。插件通过其他展示方式关闭面板时，应主动调用 `teardown()`。该方法支持重复调用。
 
 # 调整面板上限高度
 
-HTML 面板高度会受到最大内容高度限制。`mnaddon.json` 可以用 `panelMaxHeight` 设置初始值；需要在运行时改变该上限时，可在 `main.js` 中修改：
+HTML 面板高度会受到最大内容高度限制。`mnaddon.json` 使用 `panelMaxHeight` 设置初始值；需要在运行时改变该上限时，可在 `main.js` 中修改：
 
 ```javascript main.js
 JSB.newAddon = function (mainPath) {
@@ -250,17 +281,17 @@ JSB.newAddon = function (mainPath) {
 };
 ```
 
-面板侧仍然用 `mn.fit()`、`mn.height(h)` 或 `mn.size(w, h)` 调整实际尺寸。`maxContentHeight` 只决定允许达到的上限。这个属性必须设置在实际显示的面板实例上；如果重新创建了面板，旧实例上的设置不会自动作用到新实例。
+面板侧仍然用 `mn.fit()`、`mn.height(h)` 或 `mn.size(w, h)` 调整实际尺寸。`maxContentHeight` 只决定允许达到的上限。该属性必须设置在实际显示的面板实例上；重新创建面板后，旧实例上的设置不会自动作用到新实例。
 
 # 混合插件与清单能力的分工
 
-纯 HTML 场景插件可以主要依赖 `mnaddon.json` 提供面板入口、尺寸和宿主事件声明。加入 `main.js` 后，清单里的 `panel` 仍然由 `loadPanel()` 使用，`panelMaxHeight` 仍可作为初始配置；但按钮入口、何时打开面板、面板对象如何按窗口持有、关闭时如何清理，以及从原生生命周期向页面转发哪些事件，都应由 `main.js` 明确接线。
+纯 HTML 场景插件通常依赖 `mnaddon.json` 提供面板入口、尺寸和宿主事件声明。加入 `main.js` 后，清单里的 `panel` 仍然由 `loadPanel()` 使用，`panelMaxHeight` 仍可作为初始配置；但按钮入口、面板打开触发时机、面板对象按窗口持有的方式、关闭时的清理流程，以及从原生生命周期向页面转发的事件，都应由 `main.js` 明确接线。
 
-如果插件还需要兼容纯 HTML 模式，建议把“没有 `main.js` 的包”和“带 `main.js` 的混合包”分开验证：前者确认清单自动行为，后者确认 `main.js` 的加载、显示、通信和清理链路。
+需要兼容纯 HTML 模式的插件，建议分别验证“没有 `main.js` 的插件包”和“带 `main.js` 的混合插件包”：前者确认清单自动行为，后者确认 `main.js` 的加载、显示、通信和清理链路。
 
 # 使用 MN 原生对象
 
-`main.js` 可以访问 JSB 暴露的原生对象，例如 `Application`、`Database`、`NSFileManager`、`NSUserDefaults`、`NSTimer`、`UIColor`、`UIViewController` 等。
+`main.js` 可访问 JSB 暴露的原生对象，例如 `Application`、`Database`、`NSFileManager`、`NSUserDefaults`、`NSTimer`、`UIColor`、`UIViewController` 等。
 
 例如：
 
