@@ -2,11 +2,7 @@
 title: "面板之外"
 ---
 
-<Warning>
-  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
-</Warning>
-
-除了使用 Web 技术栈进行标准的场景插件开发外，还可以在插件根目录增加 `main.js`，以融合场景插件和经典插件的方式进行插件开发。
+除了使用 Web 技术栈进行标准的场景插件开发外，也可在插件根目录增加 `main.js`，以融合场景插件和经典插件的方式进行插件开发。
 
 使用该方式进行开发的场景包括但不限于：
 
@@ -35,7 +31,7 @@ title: "面板之外"
 ```json mnaddon.json
 {
   "addonid": "mn.hello",
-  "title": "你好世界",
+  "title": "示例插件",
   "version": "0.1.0",
   "author": "插件作者",
   "marginnote_version_min": "4.5.0",
@@ -46,78 +42,198 @@ title: "面板之外"
 
 `main.js` 需要放在插件根目录。MN 加载插件时会**立即**执行该文件，并调用其中的 `JSB.newAddon(mainPath)`。该函数需要返回一个继承自 `JSExtension` 的类。
 
-# 基本入口
+# 插件入口
 
-下面的 `main.js` 完成了常用初始化工作：
+加入 `main.js` 后，插件入口将变为 `main.js`。下面是一种经典写法：
 
 ```javascript main.js
 JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包根目录
   var AddonClass = JSB.defineClass(
     "HelloAddon : JSExtension", // 插件名 : JSExtension
     {
-      sceneWillConnect: function () { // 在插件即将启用时触发
-        var panel = AddonWebPanel.panel(); //当前插件的面板对象
-        panel.maxContentHeight = 760;
-
-        panel.showMessage = function (data) {
-          var text = data && data.text ? String(data.text) : "已收到";
-          Application.sharedInstance().showHUD(text, self.window, 2);
-          return { ok: true, text: text };
-        };
-      },
-
-      notebookWillOpen: function (topicid) { // 在学习集打开时触发
-        this.topicid = topicid;
-      },
-
-      notebookWillClose: function (topicid) {
-        this.topicid = null;
-      }
-    },// 实例成员
-    {}// 类成员
+      sceneWillConnect: function () {}, // 在插件即将启用时触发
+      notebookWillOpen: function (topicid) {}, // 在学习集打开时触发
+      notebookWillClose: function (topicid) {} // 在学习集打开时触发
+      // 添加更多实例成员...
+    },
+    {
+      addonDidConnect: function () {},
+      addonWillDisconnect: function () {},
+      // 添加更多类成员...
+    }
   );
 
   return AddonClass;
 };
 ```
 
-# 从面板调用 main.js
+<Note>
+  在`JSB.defineClass`定义的实例成员中，使用`self`而非`this`来引用 JSB 定义的类（如`JSExtension`）的实例。关于 JSB 定义的类的可用成员详见[使用 MN 原生对象](#使用MN原生对象)
+</Note>
 
-# 从 main.js 调用面板
+# 手动控制面板
 
-# 调整面板上限高度
+加入 `main.js` 后，点击插件按钮将**不再**自动打开面板，面板的创建、加载、显示和清理都要由插件自己完成。
 
-HTML 面板高度会受到最大内容高度限制。`mnaddon.json` 可以用 `panelMaxHeight` 设置初始值；需要在运行时改变该上限时，可在 `main.js` 中修改：
+例如下面定义了一个打开面板并设置最大高度的函数。
 
 ```javascript main.js
-JSB.newAddon = function (mainPath) {
-  var AddonClass = JSB.defineClass("HeightAddon : JSExtension", {
-    sceneWillConnect: function () {
-      var panel = AddonWebPanel.panel();
-      panel.maxContentHeight = 760;
-    }
-  }, {});
+const openPanel = (context) => {
+  const panel = AddonWebPanel.panel();
+  panel.maxContentHeight = 760;
 
-  return AddonClass;
+  panel.loadPanel();
+  panel.showFloatingIn(Application.sharedInstance().studyController(context.window));
+
+  return panel;
 };
 ```
 
-面板侧仍然用 `mn.fit()`、`mn.height(h)` 或 `mn.size(w, h)` 调整实际尺寸。`maxContentHeight` 只决定允许达到的上限。
+注意，由于显示面板需要传入`studyController`实例，而`studyController`实例又需要通过插件实例获取，因此该函数需要为 `context` 参数传入在 JSB 定义的类的实例成员方法中的 `self` 。
+
+# 双向通信
+
+## 从面板调用 main.js
+
+面板调用 `mn.call(name, payload)` 时会触发 `main.js`的 `panel.onMessage(name, payload)`。
+
+`onMessage` 的返回值会进行序列化作为 `mn.call()` 的结果返回页面。
+
+下面是具体例子：
+
+```javascript main.js
+const bindPanelMessage = (panel, context) => {
+  panel.onMessage = (name, payload) => {
+    if (name === "showMessage") {
+      Application.sharedInstance().showHUD(payload.text, context.window, 2);
+      return { ok: true };
+    }
+
+    return {};
+  };
+};
+```
+
+面板写法如下：
+
+```html index.html
+<button id="send">发送到 main.js</button>
+<pre id="out"></pre>
+
+<script>
+  const out = document.getElementById("out");
+
+  document.getElementById("send").onclick = async function () {
+    const result = await mn.call("showMessage", { text: "来自 HTML 面板" });
+    out.textContent = JSON.stringify(result, null, 2);
+  };
+</script>
+```
+
+`mn.call`的 Promise 返回值在包括但不限于下列情形时会进入失败分支：
+
+- 未注册`onMessage`
+- 插件被禁用或暂停
+- 回调抛出异常
+- 返回值无法序列化
+
+## 从 main.js 调用面板
+
+`main.js` 可以通过调用 `panel.post(event, data)` 向已经加载的面板发送事件。面板通过 `window.addEventListener("mn:<event>", handler)` 接收事件，并从 `event.detail` 读取数据。
+
+下面是具体例子：
+
+```javascript main.js
+const sendStatusToPanel = (panel, message) => {
+  panel.post("status", {
+    message: `main.js发来消息：${message}`
+  });
+};
+```
+
+面板写法如下：
+
+```html index.html
+<pre id="status"></pre>
+
+<script>
+  window.addEventListener("mn:status", function (event) {
+    document.getElementById("status").textContent =
+      JSON.stringify(event.detail, null, 2);
+  });
+</script>
+```
+
+<Tip>
+  `post()` 在页面加载完成前调用时，事件会先被缓存，并在页面就绪后投递。
+</Tip>
 
 # 使用 MN 原生对象
 
-`main.js` 可以访问 JSB 暴露的原生对象，例如 `Application`、`Database`、`NSFileManager`、`NSUserDefaults`、`NSTimer`、`UIColor`、`UIViewController` 等。
+`main.js` 可访问 JSB 暴露的原生对象，例如 `Application`、`Database`、`NSFileManager`、`NSUserDefaults`、`NSTimer`、`UIColor`、`UIViewController` 等。
 
 例如：
 
-```javascript main.js
-var app = Application.sharedInstance();
-var studyController = app.studyController(self.window);
-var database = Database.sharedInstance();
+```javascript
+const app = Application.sharedInstance();
+const studyController = app.studyController(self.window);
+const database = Database.sharedInstance();
 ```
 
-<Note>
-  在`JSB.defineClass`定义的实例成员中，使用`self`而非`this`来引用JSB 定义的类（如`JSExtension`）的实例。
-</Note>
-
 完整对象、属性与方法请参考 [MarginNote 插件开发文档](https://mn-docs.museday.top)。
+
+# 面板对象常用方法
+
+## 创建和加载
+
+### `AddonWebPanel.panel()`
+
+创建一个新的面板对象。
+
+### `panel.loadPanel()`
+
+按 `mnaddon.json` 的 `panel` 字段读取包内 HTML 文件。文件不存在、未声明 `panel` 或路径越界时返回 `false`。这是加载面板的推荐方式。
+
+### `panel.loadHTML(html)`
+
+直接加载一段 HTML 字符串作为面板的源代码。
+
+## 双向通信
+
+### `panel.onMessage = function (name, payload) { ... }`
+
+接收面板侧 `mn.call(name, payload)` 的入口。
+
+### `panel.post(event, data)`
+
+从 `main.js` 向面板页面以 `mn:<event>` 的命名格式发送事件。
+
+## 媒体数据
+
+### `panel.putMedia(key, data, type)`
+
+将二进制图片数据交给面板。页面通过 `/media/<key>` 引用该数据。`data` 为空时，宿主会删除对应 key。
+
+### `panel.clearMedia()`
+
+清空当前面板的媒体缓存。较大的图片数据建议通过媒体缓存传递，避免放入 JSON 或 `post()` 数据。
+
+## 显示和隐藏
+
+### `panel.showFloatingIn(studyController)`
+
+将面板作为常驻浮层显示到学习集控制器中。面板已经显示时，再次调用会将面板置于前台并刷新布局。
+
+### `panel.showFloatingInMode(studyController, mode)`
+
+按指定形态显示面板。`mode` 可使用 `"mini"` 或 `"workspace"`。
+
+### `panel.hideFloating()`
+
+收起浮层，并触发面板清理。插件主动关闭面板时，优先调用该方法。
+
+## 资源清理
+
+### `panel.teardown()`
+
+显式断开面板、WebView、回调和未完成请求之间的引用关系，避免旧面板继续占用资源。`hideFloating()` 会一并执行清理。插件通过其他展示方式关闭面板时，应主动调用 `teardown()`。
