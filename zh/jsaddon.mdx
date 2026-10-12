@@ -53,7 +53,7 @@ JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包�
     {
       sceneWillConnect: function () {}, // 在插件即将启用时触发
       notebookWillOpen: function (topicid) {}, // 在学习集打开时触发
-      notebookWillClose: function (topicid) {} // 在学习集打开时触发
+      notebookWillClose: function (topicid) {} // 在学习集关闭时触发
       // 添加更多实例成员...
     },
     {
@@ -68,7 +68,7 @@ JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包�
 ```
 
 <Note>
-  在`JSB.defineClass`定义的实例成员中，使用`self`而非`this`来引用 JSB 定义的类（如`JSExtension`）的实例。关于 JSB 定义的类的可用成员详见[使用 MN 原生对象](#使用MN原生对象)
+  在`JSB.defineClass`定义的实例成员中，使用`self`而非`this`来引用 JSB 定义的类（如`JSExtension`）的实例。关于 JSB 定义的类的可用成员详见[使用 MN 原生对象](#使用-mn-原生对象)
 </Note>
 
 # 手动控制面板
@@ -175,6 +175,7 @@ const sendStatusToPanel = (panel, message) => {
 例如：
 
 ```javascript
+// 在 JSB 定义的类的实例成员方法里
 const app = Application.sharedInstance();
 const studyController = app.studyController(self.window);
 const database = Database.sharedInstance();
