@@ -1,0 +1,219 @@
+---
+title: "顶部工作栏与浮窗"
+description: "顶部导航、浮球与多选工具栏的模板配置"
+---
+
+<Warning>
+  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
+</Warning>
+
+底部工具条之外，界面上的其余位置由 `surfaces` 决定。`surfaces` 是一个对象，其中的每个字段对应界面的一处位置，例如顶部导航胶囊、右缘浮球坞、卡片多选时的工具栏。
+
+`surfaces` 的整体留空表示不接管，界面沿用宿主现状。
+
+# 名册的形状
+
+`surfaces` 下的字段分两种形状。多数字段是一个字符串数组，列出该位置允许出现的条目；少数字段是布尔值或整数，直接控制一项设置。
+
+数组类型字段还分成两类写法：直接写数组，例如 `dockPinned`；或者写成对象，对象含 `visible` 与 `overflow` 两个数组。`visible` 是直接摆放的条目，`overflow` 是收进 `更多` 弹层的条目。`Roster` 即这种形状。
+
+<Note>
+  后文提到的 `act.`、`op.`、`multi.` 等代号，各自有封闭清单。完整清单见[代号词汇表](/zh/template-vocabulary)。
+</Note>
+
+# 顶部导航
+
+`nav` 控制顶部胶囊上出现的按钮。写成 `Roster`：
+
+```json template.json highlight={5} focus={5}
+{
+  "id": "u-hello",
+  "name": "你好世界",
+  "surfaces": {
+    "nav": {
+      "visible": [
+        "act.doc.toggle",
+        "act.doc.list",
+        "act.map.toggle",
+        "act.nav.search"
+      ],
+      "overflow": [
+        "act.doc.export",
+        "act.exportNotebook"
+      ]
+    }
+  }
+}
+```
+
+条目按作用对象分属不同前缀：`act.doc.` 是作用于当前文档的动作，`act.map.` 是作用于脑图的动作，`act.nav.search` 是胶囊上的搜索按钮。
+
+场景模板切换按钮本身始终存在，不受 `nav` 控制。`nav` 中动过之后，编辑器里会多出一个 `恢复默认` 按钮。
+
+<Note>
+  部分条目属于候选项，未接管过 `nav` 时不出现在菜单中，需要在 `nav` 中点名才进入。脑图卡片、脑图复习、脑图卡片分组看板属于此类。
+</Note>
+
+# 浮球与浮窗
+
+## 常驻球
+
+`dockPinned` 列出常驻球。模板加载之后这些球立刻挂在右缘，点击展开面板，面板只能收起回球、无法关闭。数组顺序即右缘从上到下的顺序：
+
+```json template.json highlight={5} focus={5}
+{
+  "id": "u-hello",
+  "name": "你好世界",
+  "surfaces": {
+    "dockPinned": ["contents", "ai"]
+  }
+}
+```
+
+留空或缺省表示没有常驻球，此时只有面板收起之后才出现球。可选值为 `contents`（文档与目录）、`ai`（AI）、`research`（研究）。
+
+部分球依赖当前是否打开了脑图，条件不满足时不显示。这与模板无关。
+
+<Warning>
+  `dock` 是旧字段，只记录现状、从未被消费。早先分叉出的个人模板中存有 `["contents","ai","research"]`。不要为该字段赋予新语义，常驻球请用 `dockPinned`。
+</Warning>
+
+## 展开上限
+
+`dockMaxOpen` 控制同时展开的浮窗数量上限：
+
+| 值 | 含义 |
+| --- | --- |
+| 缺省 | 上限为 2。 |
+| `0` | 不限。 |
+| 其他正整数 | 该数值为上限。 |
+
+超出上限时按最近最少使用收起最久未用的那个：球保留，交互与收起一致，内容真正释放。点击该球按正常入口重新打开。
+
+# 卡片多选工具栏
+
+卡片被多选时，底部出现一条工具栏，由 `multiSelect` 控制。该字段同样写成 `Roster`，条目分属两个前缀：`multi.` 是多选操作（删除、合并、改标签等），`op.` 是作用于卡片的操作（折叠、展开、转标题等）。
+
+```json template.json highlight={9} focus={9}
+{
+  "id": "u-hello",
+  "name": "你好世界",
+  "surfaces": {
+    "multiSelect": {
+      "visible": [
+        "multi.delete",
+        "multi.tag",
+        "op.collapseSelection"
+      ]
+    }
+  }
+}
+```
+
+`multiSelectIcons` 为该工具栏上的操作按钮指定图标，形状是由操作代号映射到 SF Symbol 名的对象：
+
+```json template.json
+{
+  "multiSelectIcons": {
+    "op.collapseSelection": "arrow.down.right.and.arrow.up.left",
+    "op.toggleTitle": "textformat.size"
+  }
+}
+```
+
+没有条目的按钮使用宿主目录中给出的默认图标。
+
+<Warning>
+  `multiSelectIcons` 是顶层字段，与 `surfaces` 同级。写进 `surfaces` 内部会被静默忽略。
+</Warning>
+
+# 显示类开关
+
+以下字段直接控制一项显示设置。缺省值即宿主现状。
+
+| 字段 | 缺省行为 | 取 `true` | 取 `false` |
+| --- | --- | --- | --- |
+| `navShowsObjectNames` | 顶部保持紧凑图标 | 显示文档与脑图的名称，并标明多窗受体 | 保持紧凑图标 |
+| `navShowsStudySetName` | 不显示 | 在首页旁显示当前学习集名称 | 不显示 |
+| `excerptResultBar` | 显示 | 显示摘录结果浮条 | 关闭浮条 |
+| `linkingButtonVisible` | 隐藏 | 在文档与脑图之间显示联动按钮 | 隐藏联动按钮 |
+| `bottomCapsuleAutoHide` | 只能手动收起 | 闲置一段时间后自动收起 | 只能手动收起 |
+| `bottomCapsuleAtTop` | 底部工具条留在底部 | 宽度允许时并入顶部一行 | 留在底部 |
+
+几点需要留意。
+
+`navShowsStudySetName` 与 `navShowsObjectNames` 相互独立。空间不足时学习集全名需在模板菜单中查看。
+
+`excerptResultBar` 只在场景阅读现场生效。浮条上的 `摘录操作` 按钮打开原来的摘录菜单；关闭该浮条后，摘录结束自动弹出菜单的原有设置仍然有效。
+
+`linkingButtonVisible` 只控制界面上是否出现联动按钮，不改变联动模式本身。隐藏按钮不会关闭联动。
+
+`bottomCapsuleAtTop` 在一行放不下时（手机、窄分屏、顶部手写层栏展开）自动退回底部，宽度恢复后重新并入顶部。
+
+# 折叠屏与侧放
+
+`foldAware` 与 `sideRail` 控制折叠设备的呈现方式，两者都是顶层字段，与 `surfaces` 同级，取值都是三态：
+
+| 值 | 含义 |
+| --- | --- |
+| 缺省 | 自动。`foldAware` 按设备是否为折叠机决定；`sideRail` 按全局手动开关决定。 |
+| `true` | 启用。 |
+| `false` | 明确关闭。 |
+
+`foldAware` 为自动时，折叠设备会记住合起来与翻开来各自的分屏方式与浮窗位置。`sideRail` 控制顶部胶囊是否侧放成竖条，用于折叠设备的内屏。
+
+<Warning>
+  这两个字段是顶层字段。写进 `surfaces` 内部会被静默忽略。
+</Warning>
+
+# 旧字段
+
+`bottomRead`、`bottomWrite`、`bottomRecall` 是 `bottom.modes` 之前的写法，分别对应底部工具条的读态、写态与忆态。`bottomWrite.overflow` 即两个 `更多` 弹层。
+
+已知键如下：读态是 `theme`、`titleLinks`、`blockSelect`；写态是 `tool.ink.*` 与 `tool.excerpt.*`；忆态是 `pref.recall_*`。读态已被宿主消费，写态与忆态在分期的记录中未作消费说明。
+
+`mapColumn` 用于脑图左竖条的 `mapcol.*` 条目。场景界面下该竖条整根隐藏，把条目写进 `mapColumn` 等于把对应功能提到胶囊或浮球坞。
+
+<Note>
+  新写的模板请使用 `bottom.modes`，参见[工具与模式](/zh/template-bottom)。本文涉及到底部工具条之处仅说明位置关系，该字段的完整写法在前一篇文章。
+</Note>
+
+# 完整示例
+
+```json template.json
+{
+  "id": "u-hello",
+  "name": "你好世界",
+  "bottom": {
+    "modes": [
+      {
+        "id": "read",
+        "title": "阅读",
+        "behavior": "read",
+        "tools": ["theme", "titleLinks"]
+      },
+      {
+        "id": "collect",
+        "title": "摘录",
+        "behavior": "write",
+        "tools": ["tool.excerptBox", "undoRedo", "theme"]
+      }
+    ]
+  },
+  "surfaces": {
+    "nav": {
+      "visible": ["act.doc.toggle", "act.doc.list", "act.nav.search"],
+      "overflow": ["act.doc.export"]
+    },
+    "dockPinned": ["contents", "ai"],
+    "dockMaxOpen": 2,
+    "multiSelect": {
+      "visible": ["multi.delete", "multi.tag"]
+    },
+    "navShowsObjectNames": true,
+    "navShowsStudySetName": true,
+    "excerptResultBar": true,
+    "bottomCapsuleAtTop": false
+  }
+}
+```

@@ -1,0 +1,224 @@
+---
+title: "接入插件"
+description: "让插件在场景界面上出现并读取模板配置"
+---
+
+<Warning>
+  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
+</Warning>
+
+插件装进 MN 之后，其面板可以打开，但界面上不会出现任何入口。模板决定界面上摆放的元素，因此插件要在场景界面上可见，需要模板配合。
+
+本文说明模板这一侧的三处配置。这三处缺任何一处，插件都会处于装好却无法触达的状态。
+
+# 三处配置
+
+以插件 `mn.hello` 为例，三处配置如下：
+
+<CodeGroup>
+
+```json template.json highlight={7 8} focus={7 8}
+{
+  "id": "u-hello",
+  "name": "你好世界",
+  "plugins": [
+    "mn.hello"
+  ],
+  "pluginConfigs": {
+    "mn.hello": { "v": 1 }
+  },
+  "bottom": {
+    "modes": [{
+      "id": "collect",
+      "behavior": "write",
+      "tools": ["tool.excerptBox", "addon.mn.hello.primary", "theme"]
+    }]
+  },
+  "selectionMenu": {
+    "cards": ["noteHighlight:", "addon.mn.hello.annotate:"]
+  }
+}
+```
+
+</CodeGroup>
+
+- `plugins` 是白名单，声明获准在场景界面中出现的插件。
+- `pluginConfigs` 是模板给每个插件的一份配置。
+- `addon.` 开头的条目把插件摆到界面上，一颗工具条按钮与一条卡片菜单项。
+
+`bottom.modes` 的完整写法见[工具与模式](/zh/template-bottom)，`selectionMenu` 的完整写法见[卡片与摘录菜单](/zh/template-menu)。本文只讲插件相关的部分。
+
+# 白名单
+
+`plugins` 是一个字符串数组，取值为插件的 `addonid`。**只有写进这个数组的插件才在场景界面中获准出现**，未写入的插件在场景界面中不出现。
+
+内置模板的这个数组恒为空，因此内置模板不会因为本机装了插件而改变行为。
+
+<Note>
+  `plugins` 数组的内容来自插件的 `addonid`，该字段的说明见[场景插件基础](/zh/plugin-base)。
+</Note>
+
+# 模板给插件的配置
+
+`pluginConfigs` 是一个对象，键为插件的 `addonid`，值为任意 JSON。模板把这份配置交给插件，插件无需另行存储。
+
+这份配置随模板走：导出进包、导入回来、复制分叉都带着。编辑器不解释该字段的内容，宿主也不校验。
+
+```json template.json
+{
+  "pluginConfigs": {
+    "mn.vocab": {
+      "pendingTag": "#Pending",
+      "dailyLimit": 20
+    },
+    "mn.timer": {
+      "minutes": 25
+    }
+  }
+}
+```
+
+插件读取该配置有两条路径。
+
+## 经事件声明读取
+
+插件在 `mnaddon.json` 的 `excerptClaim` 中配置 `configKey`，即可让某一处标签由模板覆盖：
+
+```json mnaddon.json highlight={6} focus={6}
+{
+  "addonid": "mn.vocab",
+  "title": "生词本",
+  "version": "0.1.0",
+  "author": "我",
+  "marginnote_version_min": "4.5.0",
+  "immersiveOnly": true,
+  "panel": "index.html",
+  "events": ["excerpt"],
+  "excerptClaim": [
+    {
+      "hashtag": "#X",
+      "configKey": "pendingTag"
+    }
+  ]
+}
+```
+
+此处的 `configKey` 为 `pendingTag`，因此该标签取值为 `pluginConfigs["mn.vocab"]["pendingTag"]`。详见[事件系统](/zh/events)。
+
+## 经接口读取
+
+页面调用 `GET /immersive/template`，响应中的 `plugins` 数组列出当前模板放行的插件，每一项含插件 id、放行状态与该插件的配置：
+
+```javascript index.html
+var r = await mn.api("/immersive/template");
+if (r && r.available) {
+  var list = r.plugins || [];
+  var mine = null;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].addon === "mn.vocab") { mine = list[i]; }
+  }
+  if (mine && mine.allowed) {
+    show(mine.config);
+  }
+}
+```
+
+据此，插件能够依据模板给出的配置调整行为，而无需把配置硬编码在面板里。
+
+<Note>
+  该接口的完整字段见 API 参考中的沉浸模板部分。取不到模板时响应里的 `available` 为假，原因在 `reason` 中，这种情况下不要循环重试。
+</Note>
+
+# 把插件摆到界面上
+
+插件贡献的界面元素以 `addon.` 为前缀，由插件 id 与元素名拼成。形状校验的正则是 `^addon\.[A-Za-z0-9_.-]+\.[A-Za-z0-9_]+$`。
+
+## 工具条按钮
+
+工具条按钮的形状是 `addon.<插件id>.<名字>`，放进 `bottom.modes[].tools`：
+
+```json template.json highlight={7} focus={7}
+{
+  "bottom": {
+    "modes": [{
+      "id": "collect",
+      "behavior": "write",
+      "tools": ["tool.excerptBox", "addon.mn.hello.primary", "theme"]
+    }]
+  }
+}
+```
+
+其中的 `primary` 是元素名，由插件与模板共同约定。`starter` 插件使用的元素名为 `primary`。
+
+<Note>
+  插件没有 `main.js` 时，宿主按 `mnaddon.json` 中声明的 `panel` 合成外壳，工具条按钮、卡片命令与摘录事件都由清单声明。这种写法下不需要额外的代码文件。
+</Note>
+
+## 卡片菜单项
+
+菜单项的形状是 `addon.<插件id>.<命令id>:`，**末尾的冒号不可省略**，放进 `selectionMenu` 的对应清单：
+
+```json template.json highlight={4} focus={4}
+{
+  "selectionMenu": {
+    "cards": [
+      "noteHighlight:",
+      "commentNote",
+      "addon.mn.hello.annotate:"
+    ]
+  }
+}
+```
+
+其中的 `annotate` 对应插件清单 `cardCommands` 中声明的命令 id。该命令的声明方式见[卡片与摘录菜单命令](/zh/menu-commands)。
+
+## 两侧都要写
+
+命令出现在菜单上需要两侧齐备：插件的 `mnaddon.json` 声明该命令存在，模板的 `selectionMenu` 把该命令摆进菜单。只写一侧，菜单上不会出现该项。
+
+| 插件侧 | 模板侧 | 结果 |
+| --- | --- | --- |
+| 声明 `cardCommands` | 未写入 `selectionMenu` | 菜单上没有该项 |
+| 未声明 `cardCommands` | 写入 `addon.<id>.<cmd>:` | 菜单上没有该项 |
+| 声明 `cardCommands` | 写入对应条目 | 菜单上出现该项 |
+
+工具条按钮同理：插件需在清单中声明可摆的入口，模板需在 `bottom.modes[].tools` 中写入对应条目。
+
+# 装好却触达不到的成因
+
+插件处于装好却无法触达的状态，成因分两类。
+
+**插件侧缺少**：插件未写入 `plugins` 白名单，或清单中未声明对应的按钮与命令。
+
+**模板侧缺少**：模板未把插件 id 写入 `plugins`，或未把对应条目写进 `bottom.modes[].tools` 与 `selectionMenu`，或写入时代号形状有误（例如遗漏菜单项末尾的冒号）。
+
+<Warning>
+  代号拼写错误与形状错误都不会报错，宿主静默忽略。排查办法见[校验与排错](/zh/template-validate)。
+</Warning>
+
+# 运行时核对
+
+面板可以读取当前模板，用于确认上述配置是否生效。宿主在响应中给出每个插件的放行状态与配置内容，核对方式如下：
+
+```javascript index.html
+var r = await mn.api("/immersive/template");
+var t = (r && r.template) || {};
+var plugins = r.plugins || [];
+var found = false;
+plugins.forEach(function (p) {
+  if (p.addon === "mn.hello") {
+    found = true;
+    mn.log("allowed =", p.allowed, " config =", JSON.stringify(p.config));
+  }
+});
+if (!found) {
+  mn.log("当前模板的 plugins 里没有 mn.hello，界面上的入口不会出现");
+}
+```
+
+该核对能确认白名单与配置是否到达，但无法确认 `selectionMenu` 中的菜单项是否摆上，因为宿主不在该响应中列出各张菜单名册的内容。菜单项需要在卡片菜单中人工确认。
+
+<Note>
+  `plugins` 中每个对象的 `addon` 为插件 id，`allowed` 表示放行状态，`config` 为模板交给该插件的配置内容。
+</Note>

@@ -1,0 +1,298 @@
+---
+title: "代号词汇表"
+description: "模板各名册位置可用的完整代号清单"
+---
+
+<Warning>
+  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
+</Warning>
+
+模板的每一个名册位置都有一份封闭清单。只有清单中的代号会被宿主采纳，其余代号被静默忽略，宿主不会报错。
+
+本文按摆放位置列出全部合法代号，供查阅。写模板时如果某颗按钮没有出现，先到本文确认代号拼写与位置是否正确。
+
+# 使用方式
+
+代号能否生效取决于两个条件：代号在清单内，且放在该清单对应的位置。两个条件缺一不可。
+
+`act.crop` 是一个具体的例子。该代号在顶部导航清单内，因此能放进 `surfaces.nav`；放进 `bottom.modes[].tools` 则被静默忽略，因为该位置不收这条代号。
+
+<Warning>
+  代号写错与代号放错位置都不会报错。校验办法见[校验与排错](/zh/template-validate)。
+</Warning>
+
+# 名册代号
+
+以下清单按位置分组。同一个代号只在其所属的位置有效。
+
+## 底部工具条的工具行
+
+字段：`bottom.modes[].tools`。共 37 条。
+
+| id | 名称 |
+|---|---|
+| `blockSelect` | Block Selection |
+| `pref.recall_cover_all_excerpts` | Mask excerpts in the document |
+| `pref.recall_force_title_only` | Titles only (hide card bodies) |
+| `pref.recall_hint_use_afm` | On-device AI hints |
+| `pref.recall_single_peek` | Reveal one at a time |
+| `pref.recall_structured_mode` | Structured hints |
+| `pref.reviewAutoAdd` | reviewAutoAddToolId |
+| `recall.handwrite` | Pen group (folded) |
+| `recall.hint` | Recall · AI hint toggle |
+| `recall.level` | Recall · MindMap level |
+| `recall.reset` | Recall · Reset |
+| `recall.settings` | Recall · Settings |
+| `theme` | Theme (light / dark) |
+| `titleLinks` | Title Links |
+| `tool.eraser` | Eraser |
+| `tool.excerpt.blank` | Blank |
+| `tool.excerpt.highlight` | Highlight Excerpt |
+| `tool.excerpt.lasso` | Lasso Excerpt |
+| `tool.excerpt.rect` | Rectangle Excerpt |
+| `tool.excerpt.text` | Text Excerpt |
+| `tool.excerptBox` | excerptBoxId |
+| `tool.excerptConti` | Continuous Excerpt |
+| `tool.excerptHand` | Hand tool |
+| `tool.hand` | Hand tool |
+| `tool.imagebox` | ImageBox |
+| `tool.ink.crayon` | Crayon |
+| `tool.ink.fountainpen` | Fountain Pen |
+| `tool.ink.marker` | Marker |
+| `tool.ink.monoline` | Monoline |
+| `tool.ink.pen` | Pen |
+| `tool.ink.pencil` | Pencil |
+| `tool.ink.watercolor` | Watercolor |
+| `tool.inkBox` | inkBoxId |
+| `tool.lasso` | Lasso |
+| `tool.penGroup` | Pen group (folded) |
+| `tool.textbox` | TextBox |
+| `undoRedo` | Undo / Redo |
+
+## 顶部导航胶囊
+
+字段：`surfaces.nav`。共 28 条。
+
+| id | 名称 |
+|---|---|
+| `act.bookmark` | Document · Add Bookmark |
+| `act.crop` | Document · Crop |
+| `act.doc.aiBreakdown` | Document · AI Breakdown |
+| `act.doc.docsPanel` | Document · Documents & Contents |
+| `act.doc.export` | Document · Export |
+| `act.doc.import` | Document · Import |
+| `act.doc.list` | Document · Documents in study set |
+| `act.doc.manage` | Document · Manage documents |
+| `act.doc.more` | Document · More (N) |
+| `act.doc.splitView` | Document · Side by side |
+| `act.doc.tempList` | Document · Temporarily opened |
+| `act.doc.toggle` | Document · Open / Close |
+| `act.editPdfPages` | Document · Edit PDF Pages |
+| `act.exportNotebook` | MindMap · Export Study Set |
+| `act.goPage` | Document · Go to Page |
+| `act.manageDictionaries` | MindMap · Manage Dictionaries |
+| `act.map.cards` | MindMap · Cards |
+| `act.map.docCards` | MindMap · Card Board |
+| `act.map.export` | MindMap · Export |
+| `act.map.layers` | MindMap · Layers |
+| `act.map.manage` | MindMap · Manage mindmaps |
+| `act.map.outline` | MindMap · Outline |
+| `act.map.review` | MindMap · Review |
+| `act.map.toggle` | MindMap · Open / Close |
+| `act.nav.search` | Capsule · Search button |
+| `act.ocrSetting` | Document · PDF OCR Settings |
+| `act.speechCards` | MindMap · Read Cards Aloud |
+| `act.viewBlankNotebook` | Document · Blank Notebook |
+
+## 右缘浮球
+
+字段：`surfaces.dock`。共 6 条。
+
+| id | 名称 |
+|---|---|
+| `cards` | CardsView |
+| `contents` | Documents & Contents |
+| `docCards` | Card Board |
+| `outline` | Outline |
+| `research` | Research |
+| `review` | Deck |
+
+## 卡片多选工具栏
+
+字段：`surfaces.multiSelect`。共 30 条。
+
+| id | 名称 |
+|---|---|
+| `multi.chat` | Chat |
+| `multi.color` | Color |
+| `multi.delete` | Delete |
+| `multi.link` | LinkNote |
+| `multi.merge` | Merge |
+| `multi.more` | More |
+| `multi.regroup` | ReGroup |
+| `multi.summary` | Summary |
+| `multi.tag` | Hashtag |
+| `op.addToMindMap` | SendToMap |
+| `op.addToReview` | Add to Review |
+| `op.cloneToPasteboard` | Clone to Pasteboard |
+| `op.collapseBlank` | Collapse Extend |
+| `op.collapseSelection` | Collapse |
+| `op.copytomap` | CopyToMindMap |
+| `op.expandBlank` | Expand Extend |
+| `op.expandSelection` | Expand |
+| `op.exportCards` | Export Card |
+| `op.hideMindMapSketch` | Hide MindMap Sketch |
+| `op.multiclearformat1` | Clear Format 1 |
+| `op.multiclearformat2` | Clear Format 2 |
+| `op.ocrForNote` | Re-recognize |
+| `op.removeFromMindMap` | Remove from MindMap |
+| `op.selectBranch` | Select Branch |
+| `op.showMindMapSketch` | Show MindMap Sketch |
+| `op.toggleDraft` | Fold the branch into an Idea Box |
+| `op.toggleOcclusion` | Occlusion |
+| `op.toggleTextFirst` | Text First |
+| `op.toggleTitle` | Text to Title |
+| `op.unmerge` | Unmerge highlights |
+
+# 能力目录
+
+能力目录中的代号可以放进两处：`bottom.modes[].overflow`（收进 `更多` 弹层）与 `settings.global`（预设拨到哪一档）。
+
+目录由宿主在运行时生成，它是权威来源。编辑器中的备用清单只在尚未进入过场景界面时代替目录生效。
+
+`domain` 列给出作用对象，它决定该条目归顶部还是归底部。
+
+<Note>
+  部分条目只抽到了代号，未抽到作用对象与名称。这些条目同样有效，列在下表中，对应位置记为未抽出。
+</Note>
+
+## 动作
+
+点击后直接执行一次操作。共 33 条。
+
+| id | 作用对象 | 名称 |
+|---|---|---|
+| `act.aiBreakdown` | doc | AI Breakdown |
+| `act.aiExtractQuestions` | doc | Exercise Mode |
+| `act.bookmark` | doc | Add bookmark |
+| `act.crop` | doc | Crop |
+| `act.docsInNotebook` | studyset | In Notebook |
+| `act.excerptSettingFromMore` | studyset | Excerpt Card Creation |
+| `act.exportDocMenu` | doc | Export Document |
+| `act.exportNotebook` | studyset | Export Notebook |
+| `act.generateTOC` | doc | Generate AI table of contents |
+| `act.goPage` | doc | Go page number |
+| `act.manageDictionaries` | map | Manage Dictionaries |
+| `act.manageExcerptPenBox` | studyset | Manage Excerpt Box… |
+| `act.manageInkPenBox` | studyset | Manage Pen Box… |
+| `act.multiView` | doc | Multi views |
+| `act.newGroup` | studyset | Import |
+| `act.ocrSetting` | doc | PDF OCR Settings |
+| `act.openPanelCardbox` | studyset | CardsView |
+| `act.openPanelChat` | ai | Ask |
+| `act.openPanelResearch` | ai | Research |
+| `act.openPanelReview` | studyset | Deck |
+| `act.search` | map | Outline |
+| `act.searchBook` | doc | Contents & Search |
+| `act.searchInBooks` | doc | Search in book(read mode) |
+| `act.searchInMaps` | map | Search |
+| `act.speechCards` | studyset | CardsToSpeech |
+| `act.stopPencil` | doc | Stop Apple Pencil |
+| `act.styleSetting` | doc | Styles |
+| `act.translateBook` | doc | Translate |
+| `act.viewDocNotesMenu` | studyset | Card Board |
+| `act.viewLayersMenu` | doc | Show notes from other notebooks |
+| `act.viewLinkBooksMenu` | doc | Referenced Documents |
+| `act.viewMarginList` | doc | MarginList |
+| `act.viewPictures` | doc | View Pictures |
+
+## 开关
+
+摆上后会回显当前状态，点击切换。共 32 条。
+
+| id | 作用对象 | 名称 |
+|---|---|---|
+| `act.editPdfPages` | doc | Edit PDF Pages |
+| `act.mapDrag` | map | Drag Mode |
+| `act.mapLink` | map | Link Mode |
+| `act.mapSelect` | map | Batch |
+| `act.notebookBar` | doc | Handwriting Layers |
+| `act.viewBlankNotebook` | doc | Blank Notebook |
+| `pref.addBlankToMap` | doc | AutoAddBlankMindMap |
+| `pref.addToMap` | doc | AutoAddMindMap |
+| `pref.alwaysSideBySide` | doc | Always side by side |
+| `pref.assistExcerpt` | doc | Assistive Excerpt |
+| `pref.disable2page` | doc | Two page mode |
+| `pref.docsketchontop` | doc | Document: Handwriting Above Text |
+| `pref.doubleClickFocus` | map | Double Click Focus (Handwriting) |
+| `pref.excerptResultBar` | doc | Excerpt result · Show feedback |
+| `pref.hideFocusSketch` | map | Newly created handwriting in the focus is only displayed in the focus (hidden outside the focus) |
+| `pref.hidebookscroll` | doc | Show Scroll Bar |
+| `pref.immersiveSideRail` | layout | Side rail capsule |
+| `pref.lockactivenote` | map | Sync Book on clicking MindMap |
+| `pref.lockfocusnote` | map | Sync MindMap on clicking Book |
+| `pref.mapSketchGesture` | map | MindMap Sketch Gesture |
+| `pref.quickMerge` | map | Quick Merge |
+| `pref.reviewAutoAdd` | studyset | Review switch · Auto add |
+| `pref.singleSideSketch` | doc | Single-side Handwriting |
+| `pref.tabshidden` | doc | Show Document Tabs |
+| `pref.titleFirstForNewCard` | map | Title First for New Card |
+| `pref.title_link_open_on_hover` | map | Open Title Links on Hover |
+| `pref.uppercaseTitle` | card | Title uppercase |
+| `tool.excerptConti` | doc | Continuous Excerpt |
+| `topic.disableAutoFullCard` | map | Click to See Full Note |
+| `topic.hideLinksInMindMapNode` | map | Show Link Comment |
+| `topic.mapConfigTitleOnly` | map | Toggle mindmap snippet mode |
+| `topic.mindmapBottom` | map | Mind Map: Handwriting Below Cards |
+
+## 选项
+
+提供若干档位供选择。共 12 条。
+
+| id | 作用对象 | 名称 |
+|---|---|---|
+| `choice.baseFontSize` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.copyMode` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.docBackground` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.docExtend` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.doubleTap` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.insertPosition` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.mapBackground` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.mapSide` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.noteFont` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.pageLayout` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.splitPanes` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `choice.textSelection` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+
+## 面板
+
+调整某个面板的呈现方式。共 3 条。
+
+| id | 作用对象 | 名称 |
+|---|---|---|
+| `panel.branchStyle` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `panel.childDict` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+| `panel.sizeScale` | 未抽出 | _（宏形态特殊，未抽到标题）_ |
+
+# 插件代号
+
+插件贡献的代号由插件 id 动态拼出，不在静态清单内，因此校验器只检查形状，不检查具体取值。
+
+```text
+bottom.modes[].tools    addon.<插件id>.<名字>
+selectionMenu.*         addon.<插件id>.<命令id>:
+```
+
+末尾的冒号不可省略。详见[接入插件](/zh/template-plugins)与[卡片与摘录菜单](/zh/template-menu)。
+
+# 笔盒中的动态引用
+
+笔盒里按序号引用的工具属于动态引用，同样不在静态清单内：
+
+```text
+excerpt:<序号>
+sketch:<序号>
+undo:<序号>
+```
+
+校验器会跳过这三类代号的检查。

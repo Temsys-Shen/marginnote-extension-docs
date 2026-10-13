@@ -1,0 +1,203 @@
+---
+title: "工具与模式"
+description: "场景模板的底部工具条：模态的字段、行为推导、工具行、笔盒与画法"
+---
+
+<Warning>
+  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
+</Warning>
+
+场景界面底部那条工具条由若干**模态**组成。一个模态等于一个标签页加一行工具：标签页负责切换，工具行负责这一页能做的事。
+
+模板接管这条工具条的方式是写出 `bottom.modes`。数组的每一项是一个模态，数组顺序即标签页的顺序。留空表示不接管，宿主保持 MarginNote 现在的样子，这一点与模板其余位置一致（见[模板包的结构](/zh/basic-package)）。
+
+顶部那一行与右侧的浮窗另有配置，见[顶部工作栏与浮窗](/zh/template-surfaces)。本文只讲底部。
+
+# 模态的结构
+
+`bottom` 只有一个字段 `modes`，类型是模态数组。模态的全部字段如下：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | `String` | 模态的标识。宿主按标识记住这一模态上次用的笔。 |
+| `title` | `String?` | 标签页上的显示名。留空按 `behavior` 取本地化的 Read / Write / Recall。 |
+| `icon` | `String?` | SF Symbol 名。留空按 `behavior` 取 `book` / `pencil.tip` / `brain.head.profile`。 |
+| `behavior` | `String?` | 进入该模态时的行为，取 `read` / `write` / `recall`。留空由 `tools` 推导。 |
+| `tools` | `[String]?` | 工具行的条目清单。留空表示不接管。 |
+| `overflow` | `[String]?` | 只进行尾收纳弹层的条目。 |
+| `entryTool` | `String?` | 进入该模态时手上拿的东西。 |
+| `recall` | `Bool?` | 进入该模态时开不开回忆会话。 |
+| `inlineCount` | `Int?` | 摘录笔盒与手写笔盒共用的常显支数。旧字段。 |
+| `inlineExcerpt` | `Int?` | 摘录笔盒常显的支数。 |
+| `inlineInk` | `Int?` | 手写笔盒常显的支数。 |
+
+`id` 与 `title` 决定标签页的画法。给模态起了名字又不选图标，标签页上画的是名字；选了图标就画图标，名字只留在编辑器里。`icon` 的取值是 SF Symbol 名，在编辑器里可以按英文名搜索。
+
+`inline*` 系列字段控制笔盒上常显几支笔，超出的支数收进笔盒末尾的 `›`。留空按窗口宽度自动，与现状相同。`inlineCount` 是两盒共用一个数的旧写法，只在 `inlineExcerpt` 与 `inlineInk` 都留空时兜底。
+
+`recall` 与 `behavior` 的 `recall` 表达同一件事：进入模态时开不开回忆会话。`recall` 显式写出时以它为准。
+
+# behavior 是推导出来的
+
+`behavior` 有三档取值，各自对应进入模态时宿主的一组动作。
+
+- `read`：笔与摘录拾取器都关。
+- `write`：启用笔与摘录拾取器。
+- `recall`：进入回忆态。
+
+留空时，宿主按 `tools` 的内容推导：工具行上有回忆控件（`recall.*`）的算 `recall`；否则行上直接摆着笔盒的算 `write`；其余算 `read`。
+
+这个推导是持续的，不是保存时定死的。把一个书写模态的笔盒从工具行上移走，这一行就没有笔盒了，于是变成阅读模态；把笔盒加回去，书写模态恢复。没起名字的模态，显示名跟着 `behavior` 一起变，因此移走笔盒时标签页上的名字也会跟着换。
+
+<Note>
+  `tools` 留空表示不接管，这一行的内容就是该行为下 MarginNote 今天的做法，推导自然也不会因为模板而改变。编辑器里给这种模态标着 `默认内容`。
+</Note>
+
+## 进入时手上的东西
+
+`entryTool` 决定进入模态时手上拿的东西，取值如下。
+
+- `none`：手上不拿工具。
+- `last`：恢复这一模态上次用的那支笔。
+
+取值受下列限制。
+
+- 工具行上没有笔时，只能取 `none`。
+- 笔折在笔组里时，进入时手上也不拿工具。折叠的笔组代号是 `tool.penGroup` 与 `recall.handwrite`，笔在按钮后面，点开笔组才有笔。
+
+<Note>
+  `entryTool` 与 `behavior` 是两个正交属性。`behavior` 决定该模态启用的拾取器，`entryTool` 决定进入时手上拿的东西。编辑器目前仍写 `behavior`，读端把两者换算之后使用。
+</Note>
+
+# 工具行与收纳弹层
+
+`tools` 是一个字符串数组，数组顺序即界面上从左到右的摆放顺序。留空表示不接管，行上摆的是该行为今天的内容。有值就完全以写的为准，行上不会出现数组以外的条目。
+
+`overflow` 收的是写态家族里摆不下的条目。这些条目只进工具行末尾的收纳弹层，不占行的位置，也不会改变工具行的宽度预算。
+
+常用代号如下。全部合法代号见[代号词汇表](/zh/template-vocabulary)。
+
+| 类别 | 常用代号 | 界面上的位置 |
+| --- | --- | --- |
+| 读态开关 | `theme`、`titleLinks`、`blockSelect` | 主题、标题链接、块选择。 |
+| 笔盒 | `tool.excerptBox`、`tool.inkBox` | 摘录笔盒、手写笔盒，各自占工具行一条。 |
+| 墨迹家族 | `tool.ink.pen`、`tool.ink.marker`、`tool.ink.pencil`、`tool.ink.crayon` | 手写笔盒里可用的具体笔。 |
+| 摘录家族 | `tool.excerpt.text`、`tool.excerpt.rect`、`tool.excerpt.lasso`、`tool.excerpt.highlight`、`tool.excerpt.blank` | 摘录笔盒里可用的具体摘录方式。 |
+| 笔盒自带按钮 | `tool.excerptHand`、`tool.excerptConti`、`tool.hand`、`tool.lasso`、`tool.eraser`、`tool.textbox`、`tool.imagebox` | 笔盒那一组自带的按钮。 |
+| 折叠的笔组 | `tool.penGroup`、`recall.handwrite` | 一颗按钮，点开是笔、套索、橡皮、撤销与完成的子行。 |
+| 撤销与重做 | `undoRedo` | 写态固定按钮。 |
+| 回忆控件 | `recall.settings`、`recall.reset`、`recall.hint`、`recall.level` | 回忆面板上的开关。 |
+| 回忆态开关 | `pref.recall_single_peek`、`pref.recall_structured_mode`、`pref.recall_hint_use_afm`、`pref.recall_cover_all_excerpts`、`pref.recall_force_title_only` | 回忆模态下可加入工具行的开关。 |
+
+墨迹家族与摘录家族描述的是笔盒里的具体条目，笔盒本身由 `tool.excerptBox` 与 `tool.inkBox` 各占一条。笔盒自带的那组按钮固定画在该组的末尾，位置不由 `tools` 的顺序决定。
+
+<Warning>
+  同一条目写多次没有意义。`tools` 是名册而非集合，重复项在读入时按一次处理。
+</Warning>
+
+<Warning>
+  代号写错时宿主不会报错，而是静默忽略该条目，表现为某一颗按钮没有出现。排查办法见[校验与排错](/zh/template-validate)。
+</Warning>
+
+<Tip>
+  `tools` 只写想要的那几条，其余的一律不会出现。名册语义在这里最容易踩坑，因为留空数组与不写这个字段是两回事：不写是不接管，写空数组则把这一行清空。
+</Tip>
+
+# 笔盒与摘录颜色
+
+模板可以自带下列内容，写在顶层：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `excerptTools` | `MNJSONValue?` | 模板自带的摘录工具集。 |
+| `excerptColors` | `MNJSONValue?` | 模板自带的摘录颜色表，十六色。 |
+| `canvasTools` | `MNJSONValue?` | 模板自带的手写笔盒。 |
+
+三者的形状都是宿主内部保存的原样字典，模板只是把宿主保存的那份原样搬运过来，不做解释也不做转换。留空表示继承，即沿用学习集或全局那套；写了值，沉浸期间就用这份配置，在沉浸里增删笔会写回这份配置，退出沉浸或换模板后回到原来那套。
+
+`excerptColors` 的优先级需要记住：学习集配过颜色表时，一律采用学习集的颜色表，与模板的配置无关。模板的颜色表只在学习集没有配过时生效。
+
+<Note>
+  笔的颜色与粗细不在这里改。改颜色与粗细在阅读时的笔盒面板与摘录设置面板里完成，改完直接存进这份模板配置。
+</Note>
+
+笔盒在工具行上占一行，这一组自带下列按钮：手写笔盒带套索、橡皮、手型、文本框、图片框，摘录笔盒带手型与连续摘录。这些按钮画在这一组的末尾，不参与排序。
+
+# chipStyle 的画法
+
+`chipStyle` 是顶层的字符串字段，决定笔盒上每一支笔的画法，取值如下。
+
+- `icon`：只画图标。留空即这一档。
+- `labeled`：文字为主，右下角再放一枚小图标，图标带着该工具的颜色。
+
+这一档只影响没有名字的笔。给某支笔起了名字之后，那一支照旧显示名字，与 `chipStyle` 无关。想让某支笔只剩图标，把它的名字清空即可。
+
+# 与旧字段的兼容
+
+`toolbar.tabs` 是配置格式早期版本里的模态名册，schema 3 起由 `bottom.modes` 取代。
+
+`bottom` 为 `nil` 时的推导顺序是：先看 `toolbar.tabs`，写了就照它推导模态；也没写就用 MarginNote 今天的读、写、忆模态。
+
+```json template.json
+{
+  "id": "u-legacy",
+  "name": "旧写法",
+  "toolbar": {
+    "tabs": ["read", "write", "recall"]
+  }
+}
+```
+
+<Warning>
+  新写的模板一律用 `bottom.modes`。`toolbar.tabs` 留着只为读懂已有的个人模板，不适合继续往上加东西。
+</Warning>
+
+# 完整示例
+
+仓库的 `sdk/output/tools/starter/template/1-bottom.json` 是接管底部工具条的最小模板：
+
+```json 1-bottom.json
+{
+  "id": "u-starter",
+  "name": "起步",
+  "minAppVersion": "4.5.0",
+  "bottom": {
+    "modes": [
+      {
+        "id": "collect",
+        "title": "摘录",
+        "behavior": "write",
+        "entryTool": "last",
+        "inlineExcerpt": 2,
+        "tools": [
+          "tool.excerptBox",
+          "tool.excerptHand",
+          "undoRedo",
+          "theme"
+        ]
+      },
+      {
+        "id": "read",
+        "title": "阅读",
+        "behavior": "read",
+        "tools": [
+          "theme",
+          "titleLinks"
+        ]
+      }
+    ]
+  }
+}
+```
+
+逐部分说明如下。
+
+- `minAppVersion`：模板用到某一版之后才有的宿主能力时声明它，导入时挡下。`bottom` 从 schema 3 起可用。
+- `bottom.modes[0]`：摘录模态。`id` 是模板内部标识；`title` 决定标签页画的名字；`behavior` 写明这是书写模态；`entryTool: "last"` 表示进入时恢复上次用的那支笔；`inlineExcerpt` 固定摘录笔盒的常显支数。
+- `tools` 的顺序即从左到右的摆放顺序：摘录笔盒、摘录笔盒自带的手型按钮、撤销与重做、主题开关。
+- `bottom.modes[1]`：阅读模态。`tools` 里没有任何笔盒或墨迹条目，因此这一行是纯读态开关。
+- 阅读模态的 `tools` 没有写 `overflow`。留空即不接管收纳区。
+
+模板里的 `id` 与 `name` 在 [模板包的结构](/zh/basic-package) 已经讲过。装上这份模板之后，底部标签页从 MarginNote 默认的读、写、忆换成摘录与阅读。
+
+装上模板之后再放几支笔试试：摘录页的笔盒里常显两支，其余收在 `›`；把摘录笔盒从 `tools` 里删掉，这一页会变成阅读页。变化立即生效，模板不需要保存。

@@ -1,0 +1,192 @@
+---
+title: "行为设置"
+description: "偏好预设、首页、复习与引导条"
+---
+
+<Warning>
+  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
+</Warning>
+
+界面上摆放元素由 `bottom` 与 `surfaces` 决定，还有一些行为不体现为界面元素，而是表现为全局设置的预设值、进场景界面时的还原时机、以及卡片是否自动进入复习。这些由 `settings`、`home`、`review`、`resume`、`coach` 决定。
+
+这些字段与前面各篇的差别在于生效时机：元素摆放类字段立即改变界面，行为类字段在进入场景界面时借出，离开时归还。
+
+# 偏好预设
+
+`settings.global` 是一个对象，键为能力目录中的代号，值为该能力的预设。
+
+```json template.json
+{
+  "settings": {
+    "global": {
+      "pref.titleFirstForNewCard": false,
+      "pref.addToMap": true,
+      "topic.mapConfigTitleOnly": true,
+      "choice.pageLayout": "2"
+    }
+  }
+}
+```
+
+每一项的取值方式如下。
+
+| 条目类别 | 取值 |
+| --- | --- |
+| 动作类 | 不写入该键表示跟随，写入即表示启用该项 |
+| 开关类 | `true` 开启，`false` 关闭，不写入表示跟随 |
+| 选项类 | 写入具体档位，不写入表示跟随 |
+
+<Note>
+  键必须取自能力目录。目录中的条目按 `action`、`toggle`、`choice`、`panel` 分组，完整清单见[代号词汇表](/zh/template-vocabulary)。
+</Note>
+
+## 借出与归还
+
+预设值在进入场景界面时生效，生效方式是借出与归还：
+
+1. 进入场景界面时，宿主先记下当时的真实值。
+2. 把各项拨到模板设定的预设值。
+3. 退出场景界面或换用其他模板时，把记下的值拨回去。
+
+因此预设是借用，不是永久修改。退出场景界面之后，全局设置回到原样，净变化为零。
+
+<Note>
+  某一项的预设未生效时，先确认该项是否被学习集单独配过。学习集配过的内容始终优先，模板不触碰。
+</Note>
+
+## 适合预设的项
+
+下列各项在场景界面中频繁切换，写入 `settings.global` 可以省去每次手动拨动：
+
+- `pref.addToMap` 与 `pref.addBlankToMap`：摘录自动加入脑图、自动添加独立留白到脑图。
+- `pref.lockactivenote` 与 `pref.lockfocusnote`：点击脑图时同步文档、点击文档时同步脑图。
+- `pref.singleSideSketch` 与 `pref.docsketchontop`：单面手写、手写位于文字上层。
+- `choice.noteFont` 与 `choice.baseFontSize`：卡片字体与基本字体尺寸。
+- `topic.mapConfigTitleOnly`：脑图插入位置。该项取值为按文档目录分组时，摘录挂到书籍目录中对应的章节下。
+
+<Note>
+  只显示标题、点击查看全卡、在卡片中显示链接、脑图手写在卡片下层、书写背景属于学习集单独配过的设定，不在预设范围内。
+</Note>
+
+# 首页类型
+
+`home` 控制进入场景界面时的首页：
+
+| 值 | 含义 |
+| --- | --- |
+| 不写入 | 不接管，沿用全局默认 |
+| `studyset` | 学习集主导 |
+| `documents` | 文档首页 |
+
+首页跟随场景界面，因此当前激活的模板决定首页的形态。内置模板均为学习集主导。
+
+# 自动加入复习
+
+`review` 控制回忆模态中的自动加入复习开关，以及自动进入复习的卡片范围。
+
+## 开关本身
+
+`review.autoAdd` 的取值如下。
+
+| 值 | 含义 |
+| --- | --- |
+| 不写入 | 沿用宿主现状 |
+| `offer` | 第一次在某个学习集中使用该模板时，询问一次是否打开 |
+| `off` | 开关存在但默认关闭，且不询问 |
+
+<Warning>
+  该字段没有 `on` 取值。模板不得静默建立卡组或静默写入学习集。
+</Warning>
+
+`review` 这一段还控制按钮的位置。内置模板把按钮固定在某一行的末尾；个人模板可以把按钮摆到任意一行的任意位置。模板的底部工具条上没有这颗按钮时，本段配置不起作用。
+
+## 入组规则
+
+`review.rule` 决定自动进入复习的卡片范围：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `excludeToc` | `Bool?` | 目录与章节节点不进入。 |
+| `excludeGroupChildren` | `Bool?` | 组内卡片不进入，即已经并入其他卡片的卡片。 |
+| `requireTitle` | `Bool?` | 没有标题的卡片不进入。 |
+| `requireAddonValue` | `AddonValue?` | 插件元数据判定，条件成立才进入。 |
+
+```json template.json
+{
+  "review": {
+    "autoAdd": "offer",
+    "rule": {
+      "excludeToc": true,
+      "excludeGroupChildren": true,
+      "requireTitle": false,
+      "requireAddonValue": {
+        "addon": "mn.vocab",
+        "key": "status",
+        "equals": "done"
+      }
+    }
+  }
+}
+```
+
+`requireAddonValue` 含三个字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `addon` | `String` | 判定所依据的插件 id。 |
+| `key` | `String` | 判定所依据的元数据键名。 |
+| `equals` | `MNJSONValue?` | 期望的取值。 |
+
+判定条件为卡片的 `options["addon.<addon>"][key]` 等于 `equals`。插件通过写入元数据来标记卡片状态，模板据此决定是否放行。例如把标记为 `done` 的卡片排除在外。
+
+<Note>
+  从他人处导入的模板可能带有附加条件，只放行被特定标记的卡片。要修改需要改动模板本身。
+</Note>
+
+# 恢复与引导
+
+## resume
+
+`resume.card` 控制卡片状态在离开时的恢复方式：
+
+| 值 | 含义 |
+| --- | --- |
+| `silent` | 静默处理。 |
+| `pending-only` | 仅处理待办项。 |
+| `always` | 始终处理。 |
+
+## coach
+
+`coach` 控制引导条：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `enabled` | `Bool?` | 是否启用引导条。 |
+| `mode` | `String?` | `teach` 为新手模式，含教学文案；`flow` 为过了新手期，无事时完全退场。 |
+| `harvestBatch` | `Int?` | 引导条的采集批量。 |
+
+# 完整示例
+
+```json template.json
+{
+  "id": "u-hello",
+  "name": "你好世界",
+  "home": "studyset",
+  "settings": {
+    "global": {
+      "pref.addToMap": true,
+      "pref.titleFirstForNewCard": false
+    }
+  },
+  "review": {
+    "autoAdd": "offer",
+    "rule": {
+      "excludeToc": true,
+      "excludeGroupChildren": true
+    }
+  },
+  "resume": {
+    "card": "pending-only"
+  }
+}
+```

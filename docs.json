@@ -56,7 +56,15 @@
           {
             "group": "模板配置",
             "pages": [
-              "zh/basic-package"
+              "zh/basic-package",
+              "zh/template-bottom",
+              "zh/template-surfaces",
+              "zh/template-menu",
+              "zh/template-plugins",
+              "zh/template-ai",
+              "zh/template-settings",
+              "zh/template-vocabulary",
+              "zh/template-validate"
             ],
             "icon": "block-question"
           },
