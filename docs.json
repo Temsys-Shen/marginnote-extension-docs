@@ -15,6 +15,22 @@
     "languages": [
       {
         "language": "zh-CN",
+        "navbar": {
+          "links": [
+            {
+              "label": "官网",
+              "href": "https://www.marginnote.com.cn/"
+            },
+            {
+              "label": "论坛",
+              "href": "https://bbs.marginnote.com.cn/"
+            },
+            {
+              "label": "使用手册",
+              "href": "https://manual.marginnote.com.cn/mn4/"
+            }
+          ]
+        },
         "pages": [
           {
             "group": "开始",
@@ -68,6 +84,22 @@
       },
       {
         "language": "en",
+        "navbar": {
+          "links": [
+            {
+              "label": "Official Site",
+              "href": "https://www.marginnote.com/"
+            },
+            {
+              "label": "Forum",
+              "href": "https://forum.marginnote.com/"
+            },
+            {
+              "label": "Manual",
+              "href": "https://manual.marginnote.com.cn/mn4/en/"
+            }
+          ]
+        },
         "pages": [
           {
             "group": "Getting Started",
@@ -79,12 +111,6 @@
         ]
       }
     ]
-  },
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/temsys-shen/marginnote-extension-docs/"
-    }
   },
   "contextual": {
     "options": [
