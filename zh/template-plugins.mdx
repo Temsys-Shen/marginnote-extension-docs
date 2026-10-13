@@ -1,21 +1,21 @@
 ---
 title: "接入插件"
-description: "让插件在场景界面上出现并读取模板配置"
+description: "说明插件白名单、模板交给插件的配置与插件入口的写法，以及配置生效情况的核对方式"
 ---
 
 <Warning>
   本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
 </Warning>
 
-插件装进 MN 之后，其面板可以打开，但界面上不会出现任何入口。模板决定界面上摆放的元素，因此插件要在场景界面上可见，需要模板配合。
+插件安装到 MarginNote 之后，其面板可以打开，但场景界面上不会出现任何入口。场景界面显示的元素由模板决定，因此插件要在场景界面中出现，需要模板写出对应的配置。
 
-本文说明模板这一侧的三处配置。这三处缺任何一处，插件都会处于装好却无法触达的状态。
+本文承接[卡片与摘录菜单](/zh/template-menu)，说明模板里需要写入的插件接入配置：`plugins` 白名单、`pluginConfigs`，以及 `addon.` 条目的写法，并给出配置生效情况的核对方式。下列配置缺任何一处都会使插件在安装之后仍然无法使用。
 
-# 三处配置
+阅读本文之前，读者应当已经了解模板包的结构与场景界面的概念，相关说明见[最小打包](/zh/basic-package)。
 
-以插件 `mn.hello` 为例，三处配置如下：
+# 配置一览
 
-<CodeGroup>
+以插件 `mn.hello` 为例，配置如下：
 
 ```json template.json highlight={7 8} focus={7 8}
 {
@@ -40,19 +40,17 @@ description: "让插件在场景界面上出现并读取模板配置"
 }
 ```
 
-</CodeGroup>
-
 - `plugins` 是白名单，声明获准在场景界面中出现的插件。
 - `pluginConfigs` 是模板给每个插件的一份配置。
-- `addon.` 开头的条目把插件摆到界面上，一颗工具条按钮与一条卡片菜单项。
+- `addon.` 开头的条目把插件贡献的按钮与菜单项显示到界面上；本例中出现一个工具条按钮与一条卡片菜单项。
 
-`bottom.modes` 的完整写法见[工具与模式](/zh/template-bottom)，`selectionMenu` 的完整写法见[卡片与摘录菜单](/zh/template-menu)。本文只讲插件相关的部分。
+`bottom.modes` 的完整写法见[工具与模式](/zh/template-bottom)，`selectionMenu` 的完整写法见[卡片与摘录菜单](/zh/template-menu)。本文只讲与插件有关的部分。
 
 # 白名单
 
 `plugins` 是一个字符串数组，取值为插件的 `addonid`。**只有写进这个数组的插件才在场景界面中获准出现**，未写入的插件在场景界面中不出现。
 
-内置模板的这个数组恒为空，因此内置模板不会因为本机装了插件而改变行为。
+系统场景模板的 `plugins` 数组恒为空，因此系统场景模板不会因为本机安装了插件而改变行为。
 
 <Note>
   `plugins` 数组的内容来自插件的 `addonid`，该字段的说明见[场景插件基础](/zh/plugin-base)。
@@ -62,7 +60,7 @@ description: "让插件在场景界面上出现并读取模板配置"
 
 `pluginConfigs` 是一个对象，键为插件的 `addonid`，值为任意 JSON。模板把这份配置交给插件，插件无需另行存储。
 
-这份配置随模板走：导出进包、导入回来、复制分叉都带着。编辑器不解释该字段的内容，宿主也不校验。
+这份配置属于模板：导出模板包、导入模板包、复制模板时都会一并携带。模板编辑器不解释该字段的内容，MarginNote 也不校验。
 
 ```json template.json
 {
@@ -78,11 +76,11 @@ description: "让插件在场景界面上出现并读取模板配置"
 }
 ```
 
-插件读取该配置有两条路径。
+插件读取这份配置的方式如下。
 
 ## 经事件声明读取
 
-插件在 `mnaddon.json` 的 `excerptClaim` 中配置 `configKey`，即可让某一处标签由模板覆盖：
+插件在 `mnaddon.json` 的 `excerptClaim` 中配置 `configKey`，即可让某一处标签的取值由模板覆盖：
 
 ```json mnaddon.json highlight={6} focus={6}
 {
@@ -103,7 +101,7 @@ description: "让插件在场景界面上出现并读取模板配置"
 }
 ```
 
-此处的 `configKey` 为 `pendingTag`，因此该标签取值为 `pluginConfigs["mn.vocab"]["pendingTag"]`。详见[事件系统](/zh/events)。
+此处的 `configKey` 为 `pendingTag`，因此该标签的取值为 `pluginConfigs["mn.vocab"]["pendingTag"]`。详见[事件系统](/zh/events)。
 
 ## 经接口读取
 
@@ -123,19 +121,19 @@ if (r && r.available) {
 }
 ```
 
-据此，插件能够依据模板给出的配置调整行为，而无需把配置硬编码在面板里。
+据此，插件能够依据模板给出的配置调整行为，而无需把配置写在面板代码中。
 
 <Note>
   该接口的完整字段见 API 参考中的沉浸模板部分。取不到模板时响应里的 `available` 为假，原因在 `reason` 中，这种情况下不要循环重试。
 </Note>
 
-# 把插件摆到界面上
+# 插件入口的写法
 
-插件贡献的界面元素以 `addon.` 为前缀，由插件 id 与元素名拼成。形状校验的正则是 `^addon\.[A-Za-z0-9_.-]+\.[A-Za-z0-9_]+$`。
+插件贡献的界面元素以 `addon.` 为前缀，由插件 id 与元素名拼成。这类代号的格式校验使用格式匹配规则 `^addon\.[A-Za-z0-9_.-]+\.[A-Za-z0-9_]+$`。
 
 ## 工具条按钮
 
-工具条按钮的形状是 `addon.<插件id>.<名字>`，放进 `bottom.modes[].tools`：
+工具条按钮的代号为 `addon.<插件id>.<名字>`，写入 `bottom.modes[].tools`：
 
 ```json template.json highlight={7} focus={7}
 {
@@ -152,12 +150,12 @@ if (r && r.available) {
 其中的 `primary` 是元素名，由插件与模板共同约定。`starter` 插件使用的元素名为 `primary`。
 
 <Note>
-  插件没有 `main.js` 时，宿主按 `mnaddon.json` 中声明的 `panel` 合成外壳，工具条按钮、卡片命令与摘录事件都由清单声明。这种写法下不需要额外的代码文件。
+  插件没有 `main.js` 时，MarginNote 按 `mnaddon.json` 中声明的 `panel` 合成外壳，工具条按钮、卡片命令与摘录事件都由清单声明。这种写法下不需要额外的代码文件。
 </Note>
 
 ## 卡片菜单项
 
-菜单项的形状是 `addon.<插件id>.<命令id>:`，**末尾的冒号不可省略**，放进 `selectionMenu` 的对应清单：
+菜单项的代号为 `addon.<插件id>.<命令id>:`，**末尾的冒号不可省略**，写入 `selectionMenu` 的对应清单：
 
 ```json template.json highlight={4} focus={4}
 {
@@ -173,33 +171,33 @@ if (r && r.available) {
 
 其中的 `annotate` 对应插件清单 `cardCommands` 中声明的命令 id。该命令的声明方式见[卡片与摘录菜单命令](/zh/menu-commands)。
 
-## 两侧都要写
+## 插件里与模板里都要写入
 
-命令出现在菜单上需要两侧齐备：插件的 `mnaddon.json` 声明该命令存在，模板的 `selectionMenu` 把该命令摆进菜单。只写一侧，菜单上不会出现该项。
+命令要出现在菜单上，需要插件里与模板里同时写入：插件在 `mnaddon.json` 中声明该命令存在，模板在 `selectionMenu` 中写入该命令的代号。插件里的声明与模板里的条目缺少任何一处时，菜单上不会出现该项。
 
-| 插件侧 | 模板侧 | 结果 |
+| 插件里的声明 | 模板里的条目 | 结果 |
 | --- | --- | --- |
 | 声明 `cardCommands` | 未写入 `selectionMenu` | 菜单上没有该项 |
 | 未声明 `cardCommands` | 写入 `addon.<id>.<cmd>:` | 菜单上没有该项 |
 | 声明 `cardCommands` | 写入对应条目 | 菜单上出现该项 |
 
-工具条按钮同理：插件需在清单中声明可摆的入口，模板需在 `bottom.modes[].tools` 中写入对应条目。
+工具条按钮同理：插件需要在清单中声明可以放入工具条的入口，模板需要在 `bottom.modes[].tools` 中写入对应条目。
 
-# 装好却触达不到的成因
+# 安装之后无法使用的成因
 
-插件处于装好却无法触达的状态，成因分两类。
+插件安装之后仍然无法使用，原因可能在插件里，也可能在模板里。
 
-**插件侧缺少**：插件未写入 `plugins` 白名单，或清单中未声明对应的按钮与命令。
+**插件里缺少**：插件清单中未声明对应的按钮或命令。
 
-**模板侧缺少**：模板未把插件 id 写入 `plugins`，或未把对应条目写进 `bottom.modes[].tools` 与 `selectionMenu`，或写入时代号形状有误（例如遗漏菜单项末尾的冒号）。
+**模板里缺少**：模板未把插件 id 写入 `plugins`，或未把对应条目写入 `bottom.modes[].tools` 与 `selectionMenu`，或写入时代号格式有误（例如遗漏菜单项末尾的冒号）。
 
 <Warning>
-  代号拼写错误与形状错误都不会报错，宿主静默忽略。排查办法见[校验与排错](/zh/template-validate)。
+  代号拼写错误与格式错误都不会报错，MarginNote 静默忽略。排查办法见[校验与排错](/zh/template-validate)。
 </Warning>
 
-# 运行时核对
+# 运行中核对
 
-面板可以读取当前模板，用于确认上述配置是否生效。宿主在响应中给出每个插件的放行状态与配置内容，核对方式如下：
+面板可以读取当前模板，用于确认上述配置是否生效。MarginNote 在响应中给出每个插件的放行状态与配置内容，核对方式如下：
 
 ```javascript index.html
 var r = await mn.api("/immersive/template");
@@ -217,8 +215,12 @@ if (!found) {
 }
 ```
 
-该核对能确认白名单与配置是否到达，但无法确认 `selectionMenu` 中的菜单项是否摆上，因为宿主不在该响应中列出各张菜单名册的内容。菜单项需要在卡片菜单中人工确认。
+该核对能确认白名单与配置是否到达，但无法确认 `selectionMenu` 中的菜单项是否出现，因为 MarginNote 不在该响应中列出各份菜单清单的内容。菜单项需要在卡片菜单中人工确认。
 
 <Note>
   `plugins` 中每个对象的 `addon` 为插件 id，`allowed` 表示放行状态，`config` 为模板交给该插件的配置内容。
 </Note>
+
+# 小结
+
+模板里与插件有关的配置为 `plugins` 白名单、`pluginConfigs` 与 `addon.` 条目：白名单决定场景界面中允许出现的插件，`pluginConfigs` 把模板里的取值交给插件，`addon.` 条目决定工具条与卡片菜单上出现的插件入口。白名单与配置是否到达，通过 `GET /immersive/template` 核对；菜单项是否出现，需要在卡片菜单中人工确认。配置没有生效时，按[校验与排错](/zh/template-validate)定位原因。

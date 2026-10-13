@@ -1,37 +1,37 @@
 ---
 title: "校验与排错"
-description: "模板配置中三类静默忽略的错误、校验器与回归校验的用法、装机前的两道门，以及真机验收"
+description: "模板配置里会被静默忽略的错误、校验器与回归校验的用法、读取检查，以及真机验收"
 ---
 
 <Warning>
   本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
 </Warning>
 
-模板里的错误不会报错。字段名或代号写错时，宿主静默忽略该条目，作者只能从界面上发现那颗按钮没有出现。
+模板里的配置错误不会报错。字段名或代号写错时，MarginNote 静默忽略该条目，作者只能从界面上发现某个按钮没有出现。
 
-这一条性质决定了校验必须独立于装机进行。装到真机逐个点是最慢的一条路，而且界面上的遗漏未必能分辨出是配置写错、是宿主尚未消费，还是这条功能本来就不可见。静态校验先把可以机械判定的问题一次挡在装机之前。
+静默忽略这一性质决定了校验必须独立于安装进行。在真机上逐项点击测试是最慢的确认方式，而且界面上的遗漏未必能分辨出是配置写错、是条目尚未生效，还是这条功能本来就不可见。静态校验在安装之前把可以机械判定的问题一次排除。
 
-前面各篇文章讲的是各处的写法，本文讲的是写完之后的确认办法。各位置可用的完整代号清单见[代号词汇表](/zh/template-vocabulary)。
+前面各篇文章讲的是各处的写法，本文讲的是写完之后的确认办法，内容包括静默忽略的成因、校验器的用法、回归校验的作用、读取检查与校验器的分工，以及真机验收。读取检查指按 MarginNote 读取配置的方式读入一份模板，再与原始 JSON 对照，找出会被丢弃的顶层字段。读者读到这里应当已经能够写出一份完整的 `template.json`；各位置可用的完整代号清单见[代号词汇表](/zh/template-vocabulary)。
 
-# 三类静默忽略的错误
+# 静默忽略的错误
 
-校验器查的是三类问题。这三类在界面上留下的痕迹相同，差别只在成因与排查手段。
+校验器检查的错误在界面上留下的痕迹相同，差别只在成因与排查手段。以下按成因分别说明。
 
-## 字段名不在结构里
+## 字段名不在所属部分内
 
-模板由几个结构体组成：`MNImmersiveTemplate` 是顶层，`Surfaces` 对应 `surfaces`，`Roster` 对应写成 `visible` 与 `overflow` 两个数组的名册，`BottomMode` 对应 `bottom.modes` 里的每一项。字段名不在所属结构的字段集合内，宿主解码时丢弃该键。
+校验器与 MarginNote 用下列名称称呼配置的各部分：`MNImmersiveTemplate` 指整份配置，`Surfaces` 指 `surfaces`，`Roster` 指写成 `visible` 与 `overflow` 数组的清单，`BottomMode` 指 `bottom.modes` 里的每一项。字段名不在所属部分的字段定义内时，读取时丢弃该字段。
 
-常见成因有两个。一个是拼写错误，例如把 `dockPinned` 写成 `dockPinnd`。另一个是沿用了已退役的旧字段，例如 `bottomRead`、`bottomWrite`、`bottomRecall` 这三个键属于 `bottom.modes` 之前的写法，参见[顶部工作栏与浮窗](/zh/template-surfaces)中的旧字段一节。
+拼写错误是常见成因，例如把 `dockPinned` 写成 `dockPinnd`。沿用已退役的旧字段同样常见，例如 `bottomRead`、`bottomWrite`、`bottomRecall` 属于 `bottom.modes` 之前的写法，参见[顶部工作栏与浮窗](/zh/template-surfaces)中的旧字段一节。
 
-## 代号不在该位置的合法词汇表内
+## 代号不在该位置的合法代号清单内
 
-每个名册位置都有一份封闭清单。清单之外的代号被静默忽略。
+每个清单位置都有一份固定的代号清单，清单之外的代号被静默忽略。
 
-常见成因同样有两个。一个是拼写错误，例如把 `act.doc.toggle` 写成 `act.doc.toggl`。另一个是代号来自别的位置，例如把 `multi.delete` 写进 `surfaces.nav`，而该代号属于卡片多选工具栏。
+拼写错误是常见成因，例如把 `act.doc.toggle` 写成 `act.doc.toggl`。代号来自其他位置同样常见，例如把 `multi.delete` 写进 `surfaces.nav`，而该代号属于卡片多选工具栏。
 
 ## 代号存在，但放错了位置
 
-这一类最难发现，因为该代号在另一处确实合法，写在这里同样符合代号的书写形状。宿主静默忽略之后，界面上没有任何提示。
+这一类最难发现，因为该代号在另一处确实合法，写在这里同样符合代号的书写格式。MarginNote 静默忽略之后，界面上没有任何提示。
 
 举一个经过核对的位置关系。`act.doc.toggle` 是合法代号，能够放进 `surfaces.nav`。把同一条代号放进 `bottom.modes[].tools`，校验器会报出该代号属于 `surfaces.nav`。同理，`contents` 能够放进 `surfaces.dock`，放进 `bottom.modes[].tools` 会被忽略。
 
@@ -53,13 +53,13 @@ python3 sdk/output/tools/addon/validate_template.py 你的/template.json
 python3 sdk/output/tools/addon/validate_template.py 你的/template.json || echo "模板有问题"
 ```
 
-不给参数时打印一行用法并以状态码 2 退出：
+不给参数时，脚本打印一行用法并以状态码 2 退出：
 
 ```text
 usage: validate_template.py <template.json> [...]
 ```
 
-文件读不出来时打印 `FAIL` 行，并把这一项计入错误条数。全部通过时打印：
+文件读不出来时，脚本打印 `FAIL` 行，并把这一项计入错误条数。模板全部通过时，脚本打印：
 
 ```text
 OK   [3-full.json] 字段与 id 全部合法
@@ -67,7 +67,7 @@ OK   [3-full.json] 字段与 id 全部合法
 
 ## 输出格式
 
-每一个问题占一行，前缀是 `FAIL`，方括号内是文件名，随后是问题描述。字段名的问题这样写：
+每一个问题占一行，前缀是 `FAIL`，方括号内是文件名，随后是问题描述。字段名的问题按下列格式输出：
 
 ```text
 FAIL [demo.json] surfaces.dockPinnd 不是 `Surfaces` 的字段（拼错？旧 schema？）
@@ -75,9 +75,9 @@ FAIL [demo.json] bottom.modes[0].behaviour 不是 `BottomMode` 的字段（拼�
 FAIL [demo.json] (root).nm 不是 `MNImmersiveTemplate` 的字段（拼错？旧 schema？）
 ```
 
-顶层键的路径前缀写作 `(root)`。`Roster` 的内部键写错时，前缀会给出该名册所在的位置，例如 `surfaces.nav.visibl`。
+顶层字段的路径前缀写作 `(root)`。`Roster` 里的字段名写错时，前缀会给出该清单所在的位置，例如 `surfaces.nav.visibl`。
 
-代号的问题分成两种措辞。代号完全查不到时：
+代号的问题按成因给出不同措辞。代号完全查不到时：
 
 ```text
 FAIL [demo.json] bottom.modes[].tools 里的 `act.crp` 不是合法 id（拼错？已退役？写在这里会被静默忽略）
@@ -89,31 +89,31 @@ FAIL [demo.json] bottom.modes[].tools 里的 `act.crp` 不是合法 id（拼错�
 FAIL [demo.json] bottom.modes[].tools 里的 `act.doc.toggle` 放错位置了 —— 它属于 surfaces.nav（写在这里会被静默忽略）
 ```
 
-`settings.global` 的键必须取自能力目录，否则报出：
+`settings.global` 的键必须取自能力目录，否则校验器报出：
 
 ```text
 FAIL [demo.json] settings.global 里的 `notARealCap` 不在能力目录里（预设只能拨目录里的项）
 ```
 
-名册里出现非字符串条目时同样报出，消息中带上该项的实际取值。
+清单里出现非字符串条目时，校验器同样报出，消息中带上该项的实际取值。
 
 ## 放行的边界
 
-校验器对不认识的代号一律报出，不猜测、不放行。放行等于把静默忽略原样复刻一遍，配置在宿主那里仍然会被丢弃，问题只是被推迟到装机之后。
+校验器对不认识的代号一律报出，不猜测、不放行。放行等于把静默忽略原样重复一次，配置仍然会被 MarginNote 丢弃，问题只是被推迟到安装之后。
 
-合法性判断依据两份表。一份是从宿主源码生成的各位置词汇表，另一份是能力目录。能力目录由宿主在运行时生成，校验器读取的是同一份静态条目。
+合法性判断依据以下数据：从 MarginNote 源码生成的各位置代号清单，以及能力目录。能力目录由 MarginNote 生成，校验器读取的是同一份静态条目。
 
-## 两类跳过的写法
+## 跳过检查的写法
 
-笔盒中的工具按序号引用，代号以 `excerpt:`、`sketch:`、`undo:` 开头。序号对应的是笔盒里的实际排布，无法在静态词汇表中列出，因此校验器跳过这三类代号。
+笔盒中的工具按序号引用，代号以 `excerpt:`、`sketch:`、`undo:` 开头。序号对应的是笔盒里的实际排布，无法在静态代号清单中列出，因此校验器跳过这些代号。
 
-插件贡献的芯片写作 `addon.<插件id>.<名字>`，其中的插件 id 由插件动态拼出，同样无法穷举。校验器只检查形状，正则表达式如下：
+插件贡献的条目写作 `addon.<插件id>.<名字>`，其中的插件 id 由插件动态拼出，同样无法穷举。校验器只检查格式，格式匹配规则如下：
 
 ```text
 ^addon\.[A-Za-z0-9_.-]+\.[A-Za-z0-9_]+$
 ```
 
-形状不合的报出为：
+格式不合时，校验器报出：
 
 ```text
 FAIL [demo.json] surfaces.nav 里的 `addon..bad` 形状不对，插件 chip 应为 addon.<插件id>.<名字>
@@ -121,9 +121,9 @@ FAIL [demo.json] surfaces.nav 里的 `addon..bad` 形状不对，插件 chip 应
 
 ## 覆盖范围
 
-校验器检查的名册位置是 `surfaces.nav`、`surfaces.dock`、`surfaces.multiSelect`、`surfaces.bottomRead`、`bottom.modes[].tools` 与 `bottom.modes[].overflow`。名册结构中的 `visible` 与 `overflow` 两个数组都会被检查。
+校验器检查的清单位置是 `surfaces.nav`、`surfaces.dock`、`surfaces.multiSelect`、`surfaces.bottomRead`、`bottom.modes[].tools` 与 `bottom.modes[].overflow`。清单结构里的 `visible` 与 `overflow` 数组都会被检查。
 
-`selectionMenu` 下的名册不在检查范围内。写作这一节是为了说明检查边界：校验器报绿不等于模板的全部名册都被检查过。`surfaces.mapColumn` 同理。
+`selectionMenu` 下的清单不在检查范围内。说明检查边界的原因在于：校验器报告通过，不等于模板里的全部清单都被检查过。`surfaces.mapColumn` 下的清单同样不在检查范围内。
 
 # 回归校验
 
@@ -139,35 +139,35 @@ bash sdk/output/tools/addon/validate_built_templates.sh
 FAIL 找不到任何已构建模板（回归样本没了，这门就是空转）
 ```
 
-这道门守的不是模板。这些模板是宿主已知能接受的，模板本身没有错。这道门守的是词汇表没有遗漏，也就是校验器生成的各位置清单与宿主源码保持同步。
+回归校验不针对模板本身。这些模板是 MarginNote 已知能接受的，模板本身没有错误。回归校验针对的是代号清单没有遗漏，也就是校验器生成的各位置清单与 MarginNote 源码保持同步。
 
-这一点决定了校验器在正常输入上乱报的后果比没有校验器更糟。词汇表一旦漏了合法代号，模板作者会照着误报去改一个本来正确的配置。因此修改校验器、调整词汇表之后，必须跑一遍这个脚本。
+校验器在正常输入上误报的后果比没有校验器更糟。代号清单一旦漏掉合法代号，模板作者会照着误报去修改本来正确的配置。因此修改校验器、调整代号清单之后，必须重新执行一次这个脚本。
 
-# 两道门
+# 校验器与读取检查的分工
 
-宿主解码往返验证与校验器互补，各自能发现的问题不同，两道门缺一不可。
+读取检查与校验器互补，各自能发现的问题不同。
 
-宿主解码往返验证由 `sdk/output/tools/addon/decode_gate.sh` 完成：
+读取检查由 `sdk/output/tools/addon/decode_gate.sh` 完成：
 
 ```bash
 bash sdk/output/tools/addon/decode_gate.sh 你的/template.json
 ```
 
-这道门把宿主 `MNImmersiveTemplate.swift` 的值类型部分原样取出编译，用宿主那套 `Codable` 解码一份模板，再把解码结果重新编码，与原始 JSON 比对顶层键的差集。宿主解码时会静默忽略未知键，因此拼错的顶层键在解码时不会报错，往返一次才看得见。消息形如：
+读取检查把 MarginNote 主工程中 `MNImmersiveTemplate.swift` 里读取配置用的那段代码原样取出并准备好；它按 MarginNote 的读取方式读入一份模板，再原样写回，与原始 JSON 对比顶层字段，找出多出或缺失的部分。读取时会静默忽略未知字段，因此拼错的顶层字段名在读取时不会报错，写回之后才看得见。消息形如：
 
 ```text
 FAIL 你的/template.json: 这些顶层键被宿主静默丢弃 → nm
 ```
 
-这道门需要 macOS 上的 `swiftc`，编译一次需要十几秒，产物会缓存。它同时查类型错误，字段值类型不对时解码直接失败。
+读取检查需要 macOS 上的 `swiftc`，首次运行需要十几秒（脚本要先把读取配置的代码准备好），运行结果会保存下来（之后运行更快）。它同时检查类型错误，字段值的类型不对时，读取直接失败。
 
 <Warning>
-  这道门从宿主主工程的 `MNImmersiveTemplate.swift` 取源码编译。仓库检出中不含该文件，取不到时脚本报 `FAIL 找不到 MNImmersiveTemplate.swift` 并以状态码 1 退出。该门需要在具备宿主源码的环境中运行；校验器不受此限制。
+  读取检查以 MarginNote 主工程的 `MNImmersiveTemplate.swift` 为源码。仓库里不含该文件，取不到时脚本报 `FAIL 找不到 MNImmersiveTemplate.swift` 并以状态码 1 退出。读取检查需要在具备 MarginNote 源码的环境中运行；校验器不受此限制。
 </Warning>
 
-校验器查的是另一些东西：字段名之外，代号是否在合法词汇表内、代号是否放在该位置、插件芯片的形状是否合规、`settings.global` 的键是否取自能力目录。宿主解码往返验证查不出代号拼错，因为代号是一个字符串，解码能过，宿主在运行期才丢弃。
+校验器检查的是另一组问题：字段名之外，代号是否在该位置的合法代号清单内、代号是否放在该位置、插件条目的格式是否合规、`settings.global` 的键是否取自能力目录。读取检查查不出代号拼错，因为代号是一个字符串，读取能够通过，MarginNote 在使用时才会丢弃。
 
-两道门各自覆盖对方查不到的部分，缺任何一道都会漏。
+校验器与读取检查各自覆盖对方查不到的部分，缺少任何一项都会漏。
 
 # 现象与成因对照
 
@@ -175,36 +175,46 @@ FAIL 你的/template.json: 这些顶层键被宿主静默丢弃 → nm
 
 | 界面现象 | 可能成因 | 定位手段 |
 | --- | --- | --- |
-| 工具行少了一项 | 代号拼错，或该代号属于其他名册位置 | 校验器报出不是合法 id，或报出放错位置并指出归属 |
-| 按钮出现在 `更多` 弹层，工具行上没有 | 代号合法，`bottom.modes[].tools` 不收这条 | 把该代号改写进同一模态的 `overflow` |
-| 顶部导航缺少某一颗按钮 | 代号拼错，或写在了 `surfaces.nav` 之外 | 校验器检查 `surfaces.nav` |
+| 工具行里预期的工具没有出现 | 代号拼错，或该代号属于其他清单位置 | 校验器报出不是合法 id，或报出放错位置并指出归属 |
+| 按钮出现在 `更多` 弹层，工具行上没有 | 代号合法，`bottom.modes[].tools` 不接受该代号 | 把该代号改写进同一模态的 `overflow` |
+| 顶部导航缺少某个按钮 | 代号拼错，或写在了 `surfaces.nav` 之外 | 校验器检查 `surfaces.nav` |
 | 常驻浮球没有出现在右缘 | 常驻球由 `dockPinned` 控制，漏写，或写进了旧字段 `dock` | 校验器检查 `Surfaces` 的字段名 |
 | 卡片多选工具栏缺少操作 | 代号属于底部工具条或能力目录，写在了 `surfaces.multiSelect` | 校验器报出放错位置并列出归属 |
-| `settings.global` 的预设拨过去没有变化 | 键不在能力目录内 | 校验器报出不在能力目录里 |
-| 某个设置项完全不起作用 | 顶层键拼错，或沿用了旧字段，宿主解码时丢弃 | 解码门报出被静默丢弃的顶层键 |
-| 插件按钮出现，点击没有响应 | 配置这一层已经通过校验，按钮的行为由插件实现，静态校验不覆盖运行时 | 需要真机验证，见下一节 |
+| `settings.global` 的预设调整之后没有变化 | 键不在能力目录内 | 校验器报出该键不在能力目录里 |
+| 某个设置项完全不起作用 | 顶层字段名拼错，或沿用了旧字段，读取时丢弃 | 读取检查报出被静默丢弃的顶层字段 |
+| 插件按钮出现，点击没有响应 | 配置这一层已经通过校验，按钮的行为由插件实现，静态校验不覆盖运行中的行为 | 需要真机验证，见下一节 |
 
-# 实机验收
+# 真机验收
 
-静态校验覆盖的是配置写对没有，覆盖不了装进去之后是不是预期的那一份。
+静态校验覆盖的是配置是否写对，覆盖不了安装之后 MarginNote 实际加载的内容是否为预期的那一份。
 
-`sdk/output/tools/addon/starter_install_probe.py` 是配套的只读验收脚本。脚本连接运行中的 MarginNote，读取 Bridge 返回的模板摘要，与手写的 `sdk/output/tools/starter/template/3-full.json` 逐项比对：
+`sdk/output/tools/addon/starter_install_probe.py` 是配套的只读验收脚本。脚本连接运行中的 MarginNote，读取 Bridge（MarginNote 提供的本机接口）返回的模板摘要，与手写的 `sdk/output/tools/starter/template/3-full.json` 逐项比对：
 
 ```bash
 python3 sdk/output/tools/addon/starter_install_probe.py
 ```
 
-脚本默认只读。另有几项会改动状态，需要另行确认：加 `--activate` 先切到目标模板再验收，加 `--press` 按一下胶囊按钮并检查面板里的网页，加 `--run-command` 真跑一次卡片命令。
+脚本默认只读。另有几项操作会改动状态，需要另行确认：加 `--activate` 先切到目标模板再验收；加 `--press` 按一下胶囊按钮并检查面板里的网页；加 `--run-command` 实际执行一次卡片命令。
 
-Bridge 的地址取自发现文件，也可以用环境变量 `MN_BRIDGE_BASE` 覆盖。令牌取自 `~/.config/mn-bridge/token`，或者用环境变量 `MN_BRIDGE_TOKEN` 提供。拿不到令牌时脚本以状态码 2 退出，并提示到 MarginNote 设置中的 Lab 一栏复制一次接入命令。
+Bridge 的地址会自动获取，也可以用环境变量 `MN_BRIDGE_BASE` 覆盖。令牌取自 `~/.config/mn-bridge/token`，或者由环境变量 `MN_BRIDGE_TOKEN` 提供。无法获取令牌时脚本以状态码 2 退出，并提示到 MarginNote 设置中的 Lab 一栏复制一次接入命令。
 
-脚本最后会列出两条 Bridge 摘要里看不到的内容，这两条需要目视确认。
+脚本最后会列出 Bridge 摘要里看不到的内容，这些内容需要目视确认。
 
-这一步不能由静态校验替代。校验器读的是文件，Bridge 返回的是宿主实际加载的结果，两者之间隔着打包、导入与加载。装上模板包之后，界面与 Bridge 摘要一致，才算这一份模板写成了。
+这一步不能由静态校验替代。校验器读的是文件，Bridge 返回的是 MarginNote 实际加载的结果，两者之间隔着打包、导入与加载。安装模板包之后，界面与 Bridge 摘要一致，这一份模板才算配置完成。
 
-## 与插件写入侧的区别
+## 与插件写操作的区别
 
-模板配置这一层没有重试，也没有错误码。校验器把每一类问题一次报全，作者改完之后重跑一次即可。
+模板配置这一层没有重试，也没有错误码。校验器把每一类问题一次报全，作者改完之后重新执行一次即可。
 
-插件调用宿主接口的情况不同。写入侧存在 `indeterminate` 这一档，表示调用已经进入原生层但没有拿到落库结果。该档禁止自动重试，必须先读回状态再决定下一步。完整的三态定义见 SDK 仓库 `sdk/output/doc/` 下的写入侧错误契约文档。该约定只针对插件的接口调用，模板配置用不到。
-</content>
+插件调用 MarginNote 接口的情况不同。插件的写操作存在 `indeterminate` 这一档，表示调用已经进入 MarginNote 内部但没有取得写入结果。该档禁止自动重试，必须先重新读取状态再决定下一步。各状态的完整定义见 SDK 仓库 `sdk/output/doc/` 下的写入错误契约文档。该约定只针对插件的接口调用，模板配置用不到。
+
+# 小结
+
+写完一份 `template.json` 之后，确认工作按下列顺序进行：
+
+1. 运行校验器 `sdk/output/tools/addon/validate_template.py`，检查字段名、代号、插件条目格式与 `settings.global` 的键是否合法。
+2. 在具备 MarginNote 源码的环境中运行 `sdk/output/tools/addon/decode_gate.sh`，检查顶层字段是否被 MarginNote 丢弃，以及字段值的类型是否匹配。
+3. 修改校验器或代号清单之后，运行 `sdk/output/tools/addon/validate_built_templates.sh`，确认代号清单没有遗漏。
+4. 把模板包安装到真机，运行 `sdk/output/tools/addon/starter_install_probe.py`，把界面与 Bridge 摘要逐项核对。
+
+这些检查各自覆盖的范围不同，其中任何一项通过，都不代表其余各项也会通过。

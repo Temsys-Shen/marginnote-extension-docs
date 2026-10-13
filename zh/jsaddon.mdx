@@ -73,7 +73,7 @@ JSB.newAddon = function (mainPath) { // 插件入口。mainPath 表示插件包�
 
 # 手动控制面板
 
-加入 `main.js` 后，点击插件按钮将**不再**自动打开面板，面板的创建、加载、显示和清理都要由插件自己完成。
+加入 `main.js` 后，点击插件按钮将**不再**自动打开面板，面板的创建、加载、显示和清理都要由插件完成。
 
 例如下面定义了一个打开面板并设置最大高度的函数。
 
@@ -213,7 +213,7 @@ const database = Database.sharedInstance();
 
 ### `panel.putMedia(key, data, type)`
 
-将二进制图片数据交给面板。页面通过 `/media/<key>` 引用该数据。`data` 为空时，宿主会删除对应 key。
+将二进制图片数据交给面板。页面通过 `/media/<key>` 引用该数据。`data` 为空时，MarginNote 会删除对应的键。
 
 ### `panel.clearMedia()`
 
