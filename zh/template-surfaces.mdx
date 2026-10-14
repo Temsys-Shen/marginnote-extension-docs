@@ -7,15 +7,17 @@ description: "顶部导航、浮球与浮窗、卡片多选工具栏、显示类
   本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
 </Warning>
 
-底部工具条由 `bottom.modes` 控制，写法见前一篇文章[工具与模式](/zh/template-bottom)。底部工具条之外，界面上的其余位置由 `surfaces` 控制。`surfaces` 是一个对象，其中的每个字段对应界面的一处位置，例如顶部导航胶囊、右缘浮球坞、卡片多选时的工具栏。本文逐段说明这些位置的字段写法，末节给出一份完整的示例模板。
+底部工具条由 `bottom.modes` 控制，写法见[工具与模式](/zh/template-bottom)。界面上的其余位置由 `surfaces` 控制。`surfaces` 是一个对象，每个字段对应一处位置，比如顶部导航胶囊、右缘浮球坞、卡片多选时的工具栏。
 
 `surfaces` 整体留空表示不接管（见[最小打包](/zh/basic-package)的覆盖规则），界面保持现状。
 
 # 字段定义
 
-`surfaces` 下的字段取值形式并不统一。多数字段是一个字符串数组，列出该位置允许出现的条目；少数字段是布尔值或整数，直接控制一项设置。
+`surfaces` 下的字段取值形式分以下几类：字符串数组、名册、布尔值或整数。
 
-字符串数组字段可以只写数组，例如 `dockPinned`；也可以写成对象，对象含 `visible` 与 `overflow`，两者都是数组。`visible` 列出直接出现在界面上的条目，`overflow` 列出收进 `更多` 弹层的条目。对象这种写法在 MarginNote 内部称为 `Roster`。
+字符串数组字段直接列出该位置允许出现的条目，例如 `dockPinned`。名册写成对象，对象含 `visible` 与 `overflow`，两者都是数组；`visible` 列出直接出现在界面上的条目，`overflow` 列出收进 `更多` 弹层的条目。名册这种写法在 MarginNote 内部称为 `Roster`。布尔值与整数直接控制一项设置。
+
+采用名册的字段有 `nav`、`multiSelect`，以及旧字段 `dock`、`bottomRead`、`bottomWrite`、`bottomRecall`、`mapColumn`。
 
 <Note>
   后文提到的 `act.`、`op.`、`multi.` 等代号，各自有固定的清单。完整清单见[代号词汇表](/zh/template-vocabulary)。
@@ -23,7 +25,7 @@ description: "顶部导航、浮球与浮窗、卡片多选工具栏、显示类
 
 # 顶部导航
 
-`nav` 控制顶部胶囊上出现的按钮，写成 `Roster`：
+`nav` 控制顶部胶囊上出现的按钮，写成名册：
 
 ```json template.json highlight={5} focus={5}
 {
@@ -51,7 +53,7 @@ description: "顶部导航、浮球与浮窗、卡片多选工具栏、显示类
 场景模板切换按钮本身始终存在，不受 `nav` 控制。在 `nav` 中作出调整之后，模板编辑器里会多出一个 `恢复默认` 按钮。
 
 <Note>
-  部分条目属于候选项。未接管过 `nav` 时，候选项不会出现在菜单中，需要在 `nav` 中显式列出才会出现。脑图卡片、脑图复习、脑图卡片分组看板属于此类。
+  部分条目属于候选项。未接管 `nav` 时，候选项不会出现在菜单中，需要在 `nav` 中显式列出才会出现。`act.map.cards`（脑图卡片）、`act.map.review`（脑图复习）、`act.map.docCards`（脑图卡片分组看板）属于此类。
 </Note>
 
 # 浮球与浮窗
@@ -60,7 +62,7 @@ description: "顶部导航、浮球与浮窗、卡片多选工具栏、显示类
 
 ## 常驻球
 
-`dockPinned` 列出常驻球。模板加载之后，这些浮球立刻出现在右缘；点击浮球可以展开面板；面板只能收起，收起之后回到浮球，无法关闭。数组顺序即右缘从上到下的顺序：
+`dockPinned` 列出常驻球。模板加载后，这些浮球立刻出现在右缘，点击展开面板。面板只能收起，收起后回到浮球，关不掉。数组顺序即右缘从上到下的顺序：
 
 ```json template.json highlight={5} focus={5}
 {
@@ -72,12 +74,12 @@ description: "顶部导航、浮球与浮窗、卡片多选工具栏、显示类
 }
 ```
 
-留空或缺省表示没有常驻球，此时只有面板收起之后才出现浮球。可选值为 `contents`（文档与目录）、`ai`（AI）、`research`（研究）。
+留空或缺省表示没有常驻球，此时只有面板收起之后才出现浮球。可选值与界面名称的对应关系：`contents`（文档与目录）、`ai`（AI）、`research`（研究）、`cards`（卡片）、`review`（复习）、`outline`（大纲）、`docCards`（卡片分组看板）。
 
-部分浮球依赖当前是否打开了脑图，条件不满足时不显示。该条件与模板无关。
+部分浮球依赖当前是否处于脑图界面，条件不满足时不显示。该条件与模板无关。
 
 <Warning>
-  `dock` 是旧字段，只记录现状、从未生效。早期从系统场景模板复制而来的 `我的场景模板` 中存有 `["contents","ai","research"]`。不要为该字段赋予新语义，常驻球请使用 `dockPinned`。
+  `dock` 是旧字段，MarginNote 不读取其中的条目。早期从系统场景模板复制而来的 `我的场景模板` 中存有 `["contents","ai","research"]`。不要为该字段赋予新语义，常驻球请使用 `dockPinned`。
 </Warning>
 
 ## 展开上限
@@ -90,11 +92,11 @@ description: "顶部导航、浮球与浮窗、卡片多选工具栏、显示类
 | `0` | 不限。 |
 | 其他正整数 | 该数值为上限。 |
 
-超出上限时，按最近最少使用的顺序收起最久未用的浮窗：浮球保留，收起方式与手动收起一致，内容真正释放。点击浮球可以按正常入口重新打开该浮窗。
+超出上限时，最久未使用的浮窗会被收起。收起方式与手动收起一致：浮球保留，内容真正释放。点击浮球可重新打开。
 
 # 卡片多选工具栏
 
-卡片被多选时，底部出现一条工具栏，由 `multiSelect` 控制。该字段同样写成 `Roster`，条目按前缀分属 `multi.` 与 `op.`：`multi.` 是多选操作（删除、合并、改标签等），`op.` 是作用于卡片的操作（折叠、展开、转标题等）。
+卡片被多选时，底部出现一条工具栏，由 `multiSelect` 控制。该字段同样写成名册，条目按前缀分属 `multi.` 与 `op.`：`multi.` 是多选操作（删除、合并、改标签等），`op.` 是作用于卡片的操作（折叠、展开、转标题等）。
 
 ```json template.json highlight={9} focus={9}
 {
@@ -112,7 +114,7 @@ description: "顶部导航、浮球与浮窗、卡片多选工具栏、显示类
 }
 ```
 
-`multiSelectIcons` 为该工具栏上的操作按钮指定图标，写法是一个由操作代号映射到 SF Symbol 名称的对象：
+`multiSelectIcons` 为该工具栏上的操作按钮指定图标，写法是一个对象，键为操作代号，取值为 SF Symbol 名称：
 
 ```json template.json
 {
@@ -131,7 +133,7 @@ description: "顶部导航、浮球与浮窗、卡片多选工具栏、显示类
 
 # 显示类开关
 
-以下字段直接控制一项显示设置。缺省值即界面现状。
+以下字段各控制一项显示设置，缺省值即界面现状。
 
 | 字段 | 缺省行为 | 取 `true` | 取 `false` |
 | --- | --- | --- | --- |
@@ -142,27 +144,24 @@ description: "顶部导航、浮球与浮窗、卡片多选工具栏、显示类
 | `bottomCapsuleAutoHide` | 只能手动收起 | 闲置一段时间后自动收起 | 只能手动收起 |
 | `bottomCapsuleAtTop` | 底部工具条留在底部 | 宽度允许时并入顶部一行 | 留在底部 |
 
-以下几点需要留意。
+以下开关的细节：
 
-`navShowsStudySetName` 与 `navShowsObjectNames` 相互独立。空间不足时，学习集的完整名称需要在模板菜单中查看。
+- `navShowsStudySetName` 与 `navShowsObjectNames` 相互独立。空间不足时，学习集的完整名称需在模板菜单中查看。
+- `excerptResultBar` 只在场景阅读现场生效。浮条上的 `摘录操作` 按钮打开原来的摘录菜单；关掉浮条后，“摘录结束自动弹出菜单”的原有设置照常起作用。
+- `linkingButtonVisible` 只控制联动按钮是否出现，不改变联动模式本身，隐藏按钮不会关闭联动。
+- `bottomCapsuleAtTop` 在一行放不下时（手机、窄分屏、顶部手写层栏展开）自动退回底部，宽度恢复后重新并入顶部。
 
-`excerptResultBar` 只在场景阅读现场生效。浮条上的 `摘录操作` 按钮打开原来的摘录菜单；关闭该浮条之后，摘录结束自动弹出菜单的原有设置仍然有效。
-
-`linkingButtonVisible` 只控制界面上是否出现联动按钮，不改变联动模式本身。隐藏按钮不会关闭联动。
-
-`bottomCapsuleAtTop` 在一行放不下时（手机、窄分屏、顶部手写层栏展开）自动退回底部，宽度恢复后重新并入顶部。
-
-# 折叠屏与侧放
+# 折叠设备与侧放
 
 `foldAware` 与 `sideRail` 控制折叠设备的呈现方式，两者都是顶层字段，与 `surfaces` 同级，取值均可为缺省、`true` 或 `false`：
 
 | 值 | 含义 |
 | --- | --- |
-| 缺省 | 自动。`foldAware` 按设备是否为折叠机决定；`sideRail` 按全局手动开关决定。 |
+| 缺省 | 自动。`foldAware` 按设备是否为折叠设备决定；`sideRail` 按全局手动开关决定。 |
 | `true` | 启用。 |
 | `false` | 明确关闭。 |
 
-`foldAware` 为自动时，折叠设备会记住合起来与翻开来各自的分屏方式与浮窗位置。`sideRail` 控制顶部胶囊是否侧放成竖条，用于折叠设备的内屏。
+`foldAware` 为自动时，折叠设备会记住折叠状态与展开状态下各自的分屏方式与浮窗位置。`sideRail` 控制顶部胶囊是否侧放成竖条，用于折叠设备的内屏。
 
 <Warning>
   `foldAware` 与 `sideRail` 都是顶层字段。写进 `surfaces` 内部会被静默忽略。
@@ -172,17 +171,17 @@ description: "顶部导航、浮球与浮窗、卡片多选工具栏、显示类
 
 `bottomRead`、`bottomWrite`、`bottomRecall` 写在 `surfaces` 之下，是 `bottom.modes` 之前的写法，分别对应底部工具条的读态、写态与忆态。`bottomWrite.overflow` 即写态下收进 `更多` 弹层的条目。
 
-已知键如下：读态是 `theme`、`titleLinks`、`blockSelect`；写态是 `tool.ink.*` 与 `tool.excerpt.*`；忆态是 `pref.recall_*`。读态会生效，写态与忆态在分期的记录中未说明是否生效。
+以上字段收录的键：读态是 `theme`、`titleLinks`、`blockSelect`；写态是 `tool.ink.*` 与 `tool.excerpt.*`；忆态是 `pref.recall_*`。读态与写态会生效，忆态的生效情况尚未确认。
 
-`mapColumn` 用于脑图左竖条的 `mapcol.*` 条目。场景界面下该竖条整体隐藏，把条目写进 `mapColumn` 等于把对应功能提到胶囊或浮球坞。
+`mapColumn` 用于脑图左竖条的 `mapcol.*` 条目。场景界面下该竖条整体隐藏，把条目写进 `mapColumn` 等于把对应功能移到胶囊或浮球坞。
 
 <Note>
-  新写的模板请使用 `bottom.modes`，完整写法参见[工具与模式](/zh/template-bottom)。本文涉及底部工具条之处仅说明位置关系。
+  新写的模板请使用 `bottom.modes`，写法见[工具与模式](/zh/template-bottom)。
 </Note>
 
 # 完整示例
 
-下面的示例把 `bottom.modes` 与本文的 `surfaces` 字段放在同一份配置中：
+下面的示例把 `bottom.modes` 与 `surfaces` 的几个字段放在同一份配置里：
 
 ```json template.json
 {
