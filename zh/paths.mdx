@@ -1,0 +1,98 @@
+---
+title: "路径系统"
+description: "面板内的几族路径、包内文件与图片的读取方式，以及面板尺寸与形态的控制"
+---
+
+<Warning>
+  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
+</Warning>
+
+面板是一个网页。页面发出的请求都落在宿主提供的几族路径上，路径决定请求交给哪一部分处理。除 `/bridge/v1` 之外，其余路径由面板处理，不受网页面板白名单限制。
+
+# 路径一览
+
+| 路径 | 方法 | 用途 | 失败响应 |
+| --- | --- | --- | --- |
+| `/`、`/index.html` | GET | 面板的页面文件 | `500 PANEL_FILE_MISSING` |
+| `/bridge/v1/…` | 任意 | 转给 MarginNote 的接口，放行范围由白名单决定 | `403 IN_PROCESS_NOT_ALLOWED` |
+| `/addon/<名称>` | POST | 转给 `main.js` 的 `onMessage(名称, 参数)` | `500 ADDON_CALL_FAILED`、`500 ADDON_BAD_RESULT` |
+| `/media/<键>` | GET | 返回 `putMedia` 存入的原始字节 | `404 NO_MEDIA` |
+| `/ai/run-task` | POST | 调用模板声明的 AI 任务 | `403 ADDON_NOT_ACTIVE`、`501 AI_UNAVAILABLE` |
+| `/pkg/<路径>` | GET | 返回插件包内的文件 | `404 NO_PKG_FILE` |
+| `/ui/height`、`/ui/size`、`/ui/mode`、`/ui/close`、`/ui/reload` | GET | 控制面板的尺寸与形态 | 固定返回 `{"ok":true}` |
+| 其它 | — | — | `404 NOT_FOUND` |
+
+所有响应统一带 `Cache-Control: no-store`。失败响应的结构固定：
+
+```json
+{ "error": { "code": "IN_PROCESS_NOT_ALLOWED", "message": "……" } }
+```
+
+# 页面侧调用与路径的对应
+
+| 调用 | 路径 |
+| --- | --- |
+| `mn.api(path, opts)` | `/bridge/v1` 加 `path` |
+| `mn.call(name, data)` | `/addon/<name>` |
+| `mn.ai(noteid, taskId, params)` | `/ai/run-task` |
+| `mn.height`、`mn.size`、`mn.mode`、`mn.close`、`mn.reload` | `/ui/` 下的对应路径 |
+| `mn.log(...)` | 不经过路径，直接写宿主日志 |
+| `mn.on(event, cb)`、`mn.currentMode` | 不经过路径，由宿主推送 |
+
+# 包内文件：`/pkg/<路径>`
+
+`/pkg/` 指向插件包根目录，用来把包里的文件交给页面读取，例如词典数据、样式表与图标。路径相对包根，`/pkg/dict/json/s.json` 对应包内的 `dict/json/s.json`。
+
+```html
+<link rel="stylesheet" href="/pkg/style.css" />
+<script src="/pkg/model.js"></script>
+```
+
+安全限制：路径里出现 `..` 段、绝对路径、指向包外的符号链接，以及目录，一律拒绝。响应的内容类型按扩展名判断；扩展名认不出时按 `application/octet-stream` 返回。
+
+<Warning>
+  包内文件必须写 `/pkg/` 开头的绝对路径。写成相对的 `src="model.js"` 会落到 `mnpanel://panel/model.js`，那不是包路由，文件取不到。
+</Warning>
+
+# 图片：`/media/<键>`
+
+`putMedia` 把一张图片交给面板之后，页面用 `/media/<键>` 取得该图片的原始字节。键由写入方指定；写入方把同一个键置空时，对应的数据被删除，路径随之失效。
+
+该路径只进不出，没有让页面把图片交回插件的通道。
+
+# 主逻辑回调：`/addon/<名称>`
+
+页面调用 `mn.call(名称, 数据)` 时，请求以 POST 发到 `/addon/<名称>`，请求体为参数的 JSON 文本。该路径只在插件写了 `main.js` 时可用；只有页面的插件没有 `main.js`，调用会进入失败分支。写法见[面板之外](/zh/jsaddon)。
+
+# 面板本地 AI：`/ai/run-task`
+
+`mn.ai(noteid, taskId, params)` 走这条路径。请求体为 `{noteid, taskId, params}`，身份取面板所属插件，不采信请求体里的身份。该路径只在面板本地，外部调用看不到。
+
+AI 任务不可用、缺少票据、触发限流与用户拒绝等情况一律返回 HTTP 200，返回体中的 `ok` 为假。这类回执不是传输错误，按返回值判断即可。
+
+# 尺寸与形态：`/ui/*`
+
+| 路径 | 对应调用 | 行为 |
+| --- | --- | --- |
+| `/ui/height` | `mn.height(h)` | 高度取 `MIN(MAX(h, 54), maxContentHeight)`，宽度不变，不带过渡 |
+| `/ui/size` | `mn.size(w, h)` | 宽高都由页面指定，高度仍受 `maxContentHeight` 限制，带过渡 |
+| `/ui/mode` | `mn.mode('workspace' \| 'mini')` | 切换形态；切换之后由页面用 `mn.size` 上报尺寸 |
+| `/ui/close` | `mn.close()` | 浮层收起；非浮层时向插件发出 `__closed__` |
+| `/ui/reload` | `mn.reload()` | 重新加载主文档 |
+
+页面加载完成之后，宿主推一次 chrome 状态，再兜底调用一次 `mn.fit()`。chrome 状态包括：
+
+| 形式 | 取值 |
+| --- | --- |
+| CSS 变量 `--mn-drag-h` | 浮层为 `36px`，否则为 `0`；顶部这条用于拖动，页面需要为其留出高度 |
+| `<html data-mode>` | `workspace` 或 `mini` |
+| `window.mn.currentMode` | 与 `data-mode` 相同 |
+| `mn:mode` 事件 | `{mode}` |
+
+<Note>
+  面板的 WebView 是透明的，背景必须写在 `html` 元素上；只给 `body` 设背景不会显示。
+</Note>
+
+# 路径与白名单的关系
+
+网页面板白名单只决定 `/bridge/v1` 的放行范围，写法见[数据交互](/zh/data-interact)。面板本地路径不受白名单限制：读取包内文件、读取图片与控制面板尺寸，只看面板是否可用。面板能否建立由模板的 `plugins` 名单与当前是否处于场景界面决定。

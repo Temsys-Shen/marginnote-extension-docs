@@ -58,6 +58,8 @@ const blob = await shot.blob();
 
 可以调用的接口、各接口的请求体与响应字段、各接口的调用示例，见文档站的 `API 参考` 分组。
 
+`/bridge/v1` 之外，页面还能访问面板本地的其它路径，包括读取插件包内的文件、读取图片与控制面板尺寸，写法见[路径系统](/zh/paths)。
+
 # 写操作里不必填写的参数
 
 面板写数据时，`addon` 与 `confirm` 由 MarginNote 代办。`POST /notes/addon-values` 与 `POST /notes/{noteid}/edits` 的 `addon` 会被改成该面板所属插件的 id，页面填写的其他值不被采纳，因此写不进其他插件的命名空间。同一条路径上的 `confirm` 由 MarginNote 补上，页面填写的值不被采纳，也不必填写。其余写接口是否需要 `confirm`，见各接口自己的请求体说明。
