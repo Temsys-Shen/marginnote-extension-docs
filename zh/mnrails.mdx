@@ -64,8 +64,12 @@ npx mn-rails@latest init my-addon \
   <Tree.Folder name="my-addon" defaultOpen>
     <Tree.File name="index.html" />
     <Tree.File name="mnaddon.json" />
+    <Tree.File name="eslint.config.mjs" />
     <Tree.File name="vite.config.ts" />
     <Tree.File name="package.json" />
+    <Tree.Folder name="eslint">
+      <Tree.File name="framework.mjs" />
+    </Tree.Folder>
     <Tree.Folder name="src" defaultOpen>
       <Tree.File name="App.tsx" />
       <Tree.File name="main.tsx" />
@@ -93,6 +97,8 @@ npx mn-rails@latest init my-addon \
 | --- | --- |
 | `index.html` | 面板入口。 |
 | `mnaddon.json` | 插件清单，声明插件标识、名称、版本、入口与事件。 |
+| `eslint.config.mjs` | 共享 ESLint 配置。 |
+| `eslint/framework.mjs` | React、Vue 或 Svelte 的框架规则。 |
 | `src/` | React、Vue 或 Svelte 页面代码。 |
 | `public/` | Vite 原样复制到产物根目录的静态资源。 |
 | `template/template.json` | 场景模板配置。 |
@@ -105,7 +111,10 @@ npx mn-rails@latest init my-addon \
 
 | 命令 | 作用 |
 | --- | --- |
-| `npm run check` | 运行当前框架的类型检查。 |
+| `npm run lint` | 运行 ESLint 与框架推荐规则。 |
+| `npm run lint:fix` | 自动修复可修复的 ESLint 问题。 |
+| `npm run typecheck` | 运行当前框架的类型检查。 |
+| `npm run check` | 依次运行 ESLint 与类型检查。 |
 | `npm run build` | 调用 Vite 构建页面，并检查插件目录与 `/pkg/` 引用。 |
 | `npm run package` | 生成 `.mnaddon` 与 `.mntemplate` 安装包。 |
 | `npm run sync` | 把构建产物同步到本机 MarginNote，并重启应用。 |
@@ -114,6 +123,9 @@ npx mn-rails@latest init my-addon \
 使用 pnpm 时，常用命令可以直接运行：
 
 ```bash
+pnpm lint
+pnpm lint:fix
+pnpm typecheck
 pnpm check
 pnpm build
 pnpm package
@@ -134,6 +146,18 @@ pnpm doctor
 | `mn-rails doctor` | 检查工程与运行环境。 |
 
 工程不提供开发服务器脚本。页面运行环境依赖 `/pkg/` 资源路径，开发流程以构建产物检查和本地同步为准。
+
+# 代码检查规则
+
+生成工程使用 ESLint 10，并启用 TypeScript 推荐规则、当前框架推荐规则与安全规则。页面代码需要优先使用框架的状态和声明式渲染，不直接查询、创建或修改 DOM。
+
+`src/main.ts` 与 `src/main.tsx` 只允许查询页面挂载点。其他页面代码不得使用 `document.querySelector`、`appendChild`、`innerHTML`、`style` 属性或框架提供的原始 HTML 注入能力。
+
+React 模板启用 Hooks 推荐规则，并禁止 `style` 属性与 `dangerouslySetInnerHTML`。Vue 模板启用 Vue 推荐规则，并禁止内联样式与 `v-html`。Svelte 模板启用 Svelte 推荐规则，并禁止直接操作 DOM 与内联样式。
+
+原生 JavaScript 模块使用脚本模式检查。页面模块不得直接调用 `JSB`、`Application` 或 `Database`，原生模块不得访问浏览器 API，也不得使用 ESM 导入与导出。
+
+ESLint 同时检查 HTML 中的 `style` 属性、`on*` 事件属性与 `<style>` 标签。内联脚本和最终资源路径继续由 `mn-rails build` 检查。
 
 # 页面构建规则
 
