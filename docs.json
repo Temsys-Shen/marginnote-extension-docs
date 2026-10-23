@@ -131,7 +131,9 @@
       "mcp",
       "add-mcp",
       "cursor",
-      "vscode"
+      "vscode",
+      "grok",
+      "aistudio"
     ]
   },
   "description": "Marginnote 开发文档",
