@@ -1,30 +1,46 @@
 ---
 title: "使用 MN Rails 创建插件工程"
-description: "创建、构建、打包与部署 MarginNote 场景插件"
+description: "快速创建、构建、打包与部署 MarginNote 插件"
 ---
 
-<Warning>
-  本文由 AI 撰写，暂未经过人工校对，请谨慎参考。
-</Warning>
-
-`mn-rails` 是 MarginNote 场景插件的现代脚手架。页面使用 React、Vue 或 Svelte 与 Vite 开发，脚手架负责校验构建产物、整理插件目录、生成安装包，并提供本地同步与工程诊断命令。
+MN Rails 是 MarginNote 插件的现代脚手架。为开发者提供方便的工程创建、构建、打包与部署功能，并提供了丰富的模板和脚手架，帮助开发者快速上手插件开发。
 
 # 创建工程
 
-使用 npm、pnpm、yarn 或 bun 运行创建命令：
+使用 create 命令创建工程：
 
-```bash
+<CodeGroup>
+
+```bash npm
 npm create mn-rails@latest
+```
+
+```bash pnpm
 pnpm create mn-rails@latest
+```
+
+```bash yarn
 yarn create mn-rails
+```
+
+```bash bun
 bun create mn-rails
 ```
 
-创建命令依次询问框架、插件形态、插件名称、插件标识、作者与包管理器。
+</CodeGroup>
 
-当前目录只有隐藏文件与隐藏目录时，创建命令直接在当前目录生成工程。当前目录存在可见内容时，创建命令询问项目目录。项目目录的默认值由插件名称转写为 kebab-case，只包含小写英文字母、数字和短横线。
 
-例如，插件名称为 `我的_插件 Test` 时，项目目录的默认值为 `wo-de-cha-jian-test`。必填项留空时，创建命令重新询问，不会结束创建。
+运行后将以交互式方式创建工程：
+```
+❮ pnpm create mn-rails@latest
+? 选择框架
+❯ React（React 19 + TypeScript + Vite）
+  Vue（Vue 3 + TypeScript + Vite）
+  Svelte（Svelte 5 + TypeScript + Vite）
+
+↑↓ navigate • ⏎ select
+
+```
 
 ## 非交互创建
 
@@ -53,10 +69,9 @@ npx mn-rails@latest init my-addon \
 
 工程提供的插件形态如下：
 
-- 纯面板：页面入口为 `index.html`，插件面板与菜单由 MarginNote 根据 `mnaddon.json` 生成。
-- 混合形态：保留页面入口，同时包含 `native/main.js` 与 `native/PanelBridge.js`。页面通过 `mn.call` 与原生模块通信。
+- 纯面板：即标准的`场景插件`，页面入口为 `index.html`，插件面板与菜单由 MarginNote 根据 `mnaddon.json` 生成。
+- 混合形态：即混合`场景插件`与`经典插件`，包含 Web 页面与双端通信模块。见[面板之外](/zh/jsaddon)
 
-混合形态的边界与原生通信方式见[面板之外](/zh/jsaddon)。
 
 # 工程结构
 
@@ -103,7 +118,7 @@ npx mn-rails@latest init my-addon \
 | `public/` | Vite 原样复制到产物根目录的静态资源。 |
 | `template/template.json` | 场景模板配置。 |
 | `template/localizations.json` | 场景模板名称的本地化内容。 |
-| `vite.config.ts` | Vite 配置与 `mnRails()` 插件配置。 |
+| `vite.config.ts` | Vite 配置。 |
 
 # 工程命令
 
@@ -111,18 +126,29 @@ npx mn-rails@latest init my-addon \
 
 | 命令 | 作用 |
 | --- | --- |
-| `npm run lint` | 运行 ESLint 与框架推荐规则。 |
-| `npm run lint:fix` | 自动修复可修复的 ESLint 问题。 |
-| `npm run typecheck` | 运行当前框架的类型检查。 |
-| `npm run check` | 依次运行 ESLint 与类型检查。 |
-| `npm run build` | 调用 Vite 构建页面，并检查插件目录与 `/pkg/` 引用。 |
-| `npm run package` | 生成 `.mnaddon` 与 `.mntemplate` 安装包。 |
-| `npm run sync` | 把构建产物同步到本机 MarginNote，并重启应用。 |
-| `npm run doctor` | 检查工程、构建产物与 MarginNote 环境。 |
+| `lint` | 运行 ESLint 与框架推荐规则。 |
+| `lint:fix` | 自动修复可修复的 ESLint 问题。 |
+| `typecheck` | 运行当前框架的类型检查。 |
+| `check` | 依次运行 ESLint 与类型检查。 |
+| `build` | 调用 Vite 构建页面，并检查插件目录与 `/pkg/` 引用。 |
+| `package` | 生成 `.mnaddon` 与 `.mntemplate` 安装包。 |
+| `sync` | 把构建产物同步到本机 MarginNote，并重启应用。 |
+| `doctor` | 检查工程、构建产物与 MarginNote 环境。 |
 
-使用 pnpm 时，常用命令可以直接运行：
+<CodeGroup>
 
-```bash
+```bash npm
+npm run lint
+npm run lint:fix
+npm run typecheck
+npm run check
+npm run build
+npm run package
+npm run sync
+npm run doctor
+```
+
+```bash pnpm
 pnpm lint
 pnpm lint:fix
 pnpm typecheck
@@ -133,77 +159,58 @@ pnpm sync
 pnpm doctor
 ```
 
-`deploy` 是 pnpm 的内置命令。工程脚本使用 `sync` 作为名称，`sync` 内部执行 `mn-rails deploy`。
-
-底层的 `mn-rails` 命令仍然使用 `deploy`：
-
-| 命令 | 作用 |
-| --- | --- |
-| `mn-rails init` | 创建插件工程。 |
-| `mn-rails build` | 构建页面并检查产物。 |
-| `mn-rails package` | 生成插件包与场景模板包。 |
-| `mn-rails deploy` | 安装到本机 MarginNote，并重启应用。 |
-| `mn-rails doctor` | 检查工程与运行环境。 |
-
-工程不提供开发服务器脚本。页面运行环境依赖 `/pkg/` 资源路径，开发流程以构建产物检查和本地同步为准。
-
-# 代码检查规则
-
-生成工程使用 ESLint 10，并启用 TypeScript 推荐规则、当前框架推荐规则与安全规则。页面代码需要优先使用框架的状态和声明式渲染，不直接查询、创建或修改 DOM。
-
-`src/main.ts` 与 `src/main.tsx` 只允许查询页面挂载点。其他页面代码不得使用 `document.querySelector`、`appendChild`、`innerHTML`、`style` 属性或框架提供的原始 HTML 注入能力。
-
-React 模板启用 Hooks 推荐规则，并禁止 `style` 属性与 `dangerouslySetInnerHTML`。Vue 模板启用 Vue 推荐规则，并禁止内联样式与 `v-html`。Svelte 模板启用 Svelte 推荐规则，并禁止直接操作 DOM 与内联样式。
-
-原生 JavaScript 模块使用脚本模式检查。页面模块不得直接调用 `JSB`、`Application` 或 `Database`，原生模块不得访问浏览器 API，也不得使用 ESM 导入与导出。
-
-ESLint 同时检查 HTML 中的 `style` 属性、`on*` 事件属性与 `<style>` 标签。内联脚本和最终资源路径继续由 `mn-rails build` 检查。
-
-# 页面构建规则
-
-页面入口固定为工程根目录的 `index.html`。Vite 的 `base` 固定为 `/pkg/`，构建产物需要满足以下规则：
-
-- 脚本、样式、图片与字体全部使用 `/pkg/` 开头的绝对路径。
-- 不使用相对资源路径、`data:` 地址与包外网络地址。
-- 不使用内联脚本、内联样式、内联事件属性与 `style` 属性。
-- 不使用 `eval`、`new Function` 与字符串形式的定时器。
-- Vite 的构建入口必须写入页面，脚本模块图必须与 Vite 清单一致。
-- 纯面板产物不得包含根目录的 `main.js`。
-- 混合形态产物必须包含根目录的 `main.js` 与 `PanelBridge.js`。
-
-`mn-rails build` 会检查上述规则。构建失败时，先修正页面引用或 Vite 配置，再重新构建。
-
-`public/` 中的文件会复制到产物根目录。插件清单引用图标时使用包根相对路径，例如：
-
-```json mnaddon.json
-{
-  "icon": "icon.png"
-}
+```bash yarn
+yarn lint
+yarn lint:fix
+yarn typecheck
+yarn check
+yarn build
+yarn package
+yarn sync
+yarn doctor
 ```
 
-页面样式需要为 MarginNote 的拖动区域预留空间。模板默认在 `body` 上使用 `var(--mn-drag-h)`：
+</CodeGroup>
 
-```css
-body {
-  padding: calc(var(--mn-drag-h, 0px) + 14px) 16px 20px;
-}
-```
-
-# 构建与同步
+# 构建与部署
 
 首次构建：
 
-```bash
+<CodeGroup>
+
+```bash npm
 npm run build
 ```
 
+```bash pnpm
+pnpm build
+```
+
+```bash yarn
+yarn build
+```
+
+</CodeGroup>
+
 构建结果写入 `dist/`。`package` 与 `sync` 都要求 `dist/` 已经存在，并通过产物检查。
 
-本地同步：
+本地部署：
 
-```bash
+<CodeGroup>
+
+```bash npm
 npm run sync
 ```
+
+```bash pnpm
+pnpm sync
+```
+
+```bash yarn
+yarn sync
+```
+
+</CodeGroup>
 
 `sync` 执行以下步骤：
 
@@ -212,47 +219,30 @@ npm run sync
 3. 使用临时目录完成文件替换，并在失败时恢复原插件。
 4. 重启 MarginNote。
 
-本地同步只支持 macOS。其他平台使用 `npm run package` 生成安装包，再通过 MarginNote 导入。
+本地部署只支持 macOS。
 
 # 生成安装包
 
-```bash
+<CodeGroup>
+
+```bash npm
 npm run package
 ```
 
-安装包写入 `release/`：
+```bash pnpm
+pnpm package
+```
+
+```bash yarn
+yarn package
+```
+
+</CodeGroup>
+
+安装包将生成至 `release/`：
 
 - `<插件名称>-<版本>.mnaddon`：插件目录的压缩包。
 - `<模板名称>-<版本>.mntemplate`：包含模板配置、本地化文件与插件文件的场景模板包。
 
-`.mntemplate` 内的插件目录按 `addonid` 命名。模板的 `plugins` 白名单、`pluginConfigs` 与 `addon.<插件标识>.*` 代号由脚手架检查。
 
 模板配置的写法见[最小打包](/zh/basic-package)与[接入插件](/zh/template-plugins)。
-
-# 常见问题
-
-## `pnpm deploy` 提示缺少参数
-
-`pnpm deploy` 调用 pnpm 的内置命令，不会执行工程脚本。部署工程使用：
-
-```bash
-pnpm sync
-```
-
-直接调用脚手架时使用：
-
-```bash
-pnpm exec mn-rails deploy
-```
-
-## 构建提示资源路径不符合要求
-
-页面资源必须保留为独立文件，并通过 `/pkg/` 引用。检查 Vite 配置中的 `base`、`assetsInlineLimit` 与业务代码中的相对路径。
-
-## 本地同步找不到 MarginNote
-
-确认 MarginNote 已经安装并至少启动一次，同时在 MarginNote 设置中允许加载未经认证的插件。非 macOS 环境使用安装包导入。
-
-## 旧工程能否直接升级
-
-`mn-rails@2` 不提供 `1.x` 模板迁移与模板更新命令。旧工程需要创建新的 v2 工程，再迁移页面代码、插件清单与模板配置。
