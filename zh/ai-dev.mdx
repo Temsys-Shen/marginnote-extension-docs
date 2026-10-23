@@ -1,7 +1,215 @@
 ---
 title: "使用 AI 辅助创作"
+description: "借助 llms.txt、文档 MCP、skill.md 与上下文菜单，供 AI 工具查阅当前文档，并按 MN Rails 规范生成插件与模板"
 ---
 
-<Warning>
-  本文尚未完成
-</Warning>
+文档站点运行在 Mintlify 上。Mintlify 为每个页面生成 Markdown 版本，并在站点根目录提供 `llms.txt`、`llms-full.txt`、`skill.md` 与 MCP 服务。AI 工具从这些入口读取文档，编写插件时依据的是当前的字段与接口。
+
+本文以 `<文档站点域名>` 代替站点根地址，实际使用时替换为浏览器地址栏中的域名。
+
+# 站点提供的入口
+
+下表中的路径都相对于文档站点的根地址。
+
+| 路径 | 内容 |
+| --- | --- |
+| `/llms.txt` | 页面索引，包含每页标题、链接与描述，顺序与 `docs.json` 的导航一致 |
+| `/llms-full.txt` | 全部页面的 Markdown 全文，适合一次性装入上下文 |
+| `/.well-known/llms.txt` | `llms.txt` 的兼容路径，供遵循 `.well-known` 约定的工具发现 |
+| `/页面路径.md` | 单页 Markdown，例如 `/zh/mnrails.md` |
+| `/skill.md` | 站点能力说明，描述产品能完成的工作、需要的输入与约束 |
+| `/mcp` | 文档 MCP 服务的地址 |
+| `/.well-known/mcp` | MCP 服务发现文档，返回服务地址与认证方式 |
+
+站点同时提供中文与英文内容。`llms.txt` 与 `llms-full.txt` 只列出默认语言与默认版本的页面，英文页面通过导航或 MCP 检索访问。
+
+# 接入文档 MCP
+
+文档 MCP 服务提供站点内容的检索能力，AI 工具在生成回答的过程中调用，服务地址为站点根地址加 `/mcp`，不需要安装本地服务。
+
+<Tabs>
+  <Tab title="Claude Code">
+```bash
+claude mcp add --transport http marginnote-docs https://<文档站点域名>/mcp
+```
+  </Tab>
+  <Tab title="Cursor">
+在 `~/.cursor/mcp.json` 中登记服务：
+
+```json
+{
+  "mcpServers": {
+    "marginnote-docs": {
+      "url": "https://<文档站点域名>/mcp"
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="VS Code">
+在工程内创建 `.vscode/mcp.json`：
+
+```json
+{
+  "servers": {
+    "marginnote-docs": {
+      "type": "http",
+      "url": "https://<文档站点域名>/mcp"
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Codex">
+在 `~/.codex/config.toml` 中登记服务：
+
+```toml
+[mcp_servers.marginnote-docs]
+url = "https://<文档站点域名>/mcp"
+```
+  </Tab>
+</Tabs>
+
+页面右上角的上下文菜单提供「连接到 Cursor」与「连接到 VS Code」，选择后由站点写入客户端配置，不需要手工编辑文件。菜单还可以复制 MCP 服务地址与 `npx add-mcp` 安装命令，供其他客户端使用。
+
+## 服务提供的工具
+
+AI 工具根据对话上下文决定调用哪个工具：
+
+- 检索：在站点内搜索相关页面，返回标题、链接与片段，用于定位页面。
+- 读取文档文件系统：用 shell 风格的路径浏览站点虚拟文件系统，可以读取整页，也可以在一次调用中批量读取多个页面。
+- 提交反馈：发现页面错误、过时、表述不清或缺少内容时，提交页面路径与问题描述。反馈记录在 Mintlify 的分析面板中。
+
+检索支持按语言与版本过滤。站点存在多个语言时，AI 工具可以只检索中文页面；存在多个版本时，可以只检索指定版本的内容。
+
+# 读取整页或整站
+
+要求 AI 参考某一页时，在页面地址后加 `.md` 后缀，响应为纯 Markdown，上下文占用少于 HTML：
+
+```text
+https://<文档站点域名>/zh/mnrails.md
+```
+
+页面右上角的上下文菜单提供两项内容操作：
+
+- 「复制页面」：复制当前页的 Markdown 到剪贴板，便于粘贴到 AI 工具的对话中。
+- 「查看 Markdown」：在浏览器中打开当前页的 Markdown 版本。
+
+需要整站上下文时，优先使用 `llms.txt`。该文件只包含页面索引，体量小，适合先由 AI 判断需要读取的页面，再逐页取回。
+
+<Note>
+  `llms.txt` 单个文件的上限为 10 万字符。超出上限时，Mintlify 在 `/_llms/` 目录下生成分组索引文件，主文件保留「Indexes」小节链接。索引链接可能继续嵌套，读取时沿链接递归到页面为止。`llms-full.txt` 不受此限制。
+</Note>
+
+Mintlify 的响应头也会声明这些资源的位置，AI 工具无需预先知道路径即可发现 `llms.txt` 与 MCP 服务：
+
+```http
+Link: </llms.txt>; rel="llms-txt", </llms-full.txt>; rel="llms-full-txt", </.well-known/mcp/server-card.json>; rel="mcp-server-card"
+X-Llms-Txt: /llms.txt
+```
+
+# llms.txt 与 skill.md 的分工
+
+`llms.txt` 是目录，列出页面与页面描述；`skill.md` 是能力说明，记录产品可完成的工作、需要的输入与受到的约束。接入 MCP 服务后，`skill.md` 作为 MCP 资源一并暴露，不需要单独安装。
+
+在本地 AI 工具中安装技能：
+
+```bash
+npx skills add https://<文档站点域名>
+```
+
+Mintlify 通过分析文档自动生成 `skill.md`，文档更新后会在一天内同步。只有公开站点会生成该文件；在仓库根目录放置 `skill.md` 可以覆盖自动生成的版本，也可以提供 `skills/` 目录组织多项技能。
+
+# 站内助手
+
+站点可以启用对话式助手，读者在页面内直接提问，获得带有引用来源的回答。助手只依据文档内容作答，检索不到相关信息时明确说明信息不足；提问时读取当前页面作为上下文，也支持附加图片与文件。
+
+页面是否出现「询问助手」入口，取决于 `docs.json` 的 `contextual.options` 是否包含 `assistant`，以及控制台中的助手开关。助手属于付费功能，并且计入订阅额度，启用方式见 [Assistant](https://mintlify.com/docs/assistant/configure)。
+
+# 按 MN Rails 规范生成代码
+
+AI 工具缺少上下文时容易凭经验填写 `mnaddon.json` 与 `template.json` 的字段，也容易写出不符合构建规则的资源路径。下面的提示词要求 AI 先检索文档，再开始写代码：
+
+<Prompt description="按 MN Rails 规范创建插件工程">
+扮演 MarginNote 场景插件开发者。开始写代码前，先用文档 MCP 检索下列内容，并在回答中列出引用的页面：
+
+1. MN Rails 的工程结构、脚本与构建产物规则，检索关键词「使用 MN Rails 创建插件工程」。
+2. 场景模板的配置字段、插件白名单与 `addon.<插件标识>.*` 代号写法，检索关键词「接入插件」「最小打包」。
+3. 运行时 `window.mn` 的成员与 `mn.api` 的调用方式，检索关键词「使用 window.mn」。
+
+生成的文件需要满足这些约束：页面资源全部使用 `/pkg/` 开头的绝对路径；不使用 `data:` 地址与内联样式；纯面板工程不包含根目录的 `main.js`；模板 `plugins` 白名单与 `addonid` 保持一致。完成后提示运行 `npm run build` 与 `npm run doctor`，并给出失败项的排查顺序。
+</Prompt>
+
+生成代码之后，按以下顺序校验：
+
+<Steps>
+  <Step title="构建">
+    `npm run build` 检查资源路径、内联脚本与入口文件是否符合产物规则。
+  </Step>
+  <Step title="检查">
+    `npm run check` 依次运行 ESLint 与类型检查，确认页面代码没有绕过框架直接操作 DOM。
+  </Step>
+  <Step title="同步">
+    `npm run sync` 安装产物到本机 MarginNote，并重启应用。
+  </Step>
+  <Step title="诊断">
+    `npm run doctor` 检查工程、构建产物与 MarginNote 环境。
+  </Step>
+</Steps>
+
+# 查阅运行时能力
+
+插件可用的 API 随 SDK 版本变化。`mn.api` 的大部分路径与 MarginNote CLI 一致，仍有部分接口不可用，字段也可能调整。要求 AI 直接列出接口清单时，得到的结果往往是旧版本的写法。
+
+可靠的做法是在代码里先取能力清单，再决定调用路径：
+
+```javascript
+const capabilities = await mn.api("/capabilities");
+```
+
+在提示词中说明「先读取 `/capabilities`，按返回结果判断接口是否可用」，AI 生成的代码会保留能力判断，不会假定接口一定存在。
+
+# 调整文档的 AI 输出
+
+文档作者可以调整站点提供给 AI 的元信息，不需要修改页面正文：
+
+| 配置 | 作用 |
+| --- | --- |
+| `docs.json` 的 `description` | 作为 `llms.txt` 的站点摘要 |
+| 页面 frontmatter 的 `description` | 作为 `llms.txt` 中该页的描述，取第一段并截断到 300 字符 |
+| `docs.json` 的 `markdown.instructions` | 追加到每个页面的 Markdown 导出与 `llms.txt` 开头，渲染为 `Agent Instructions` 段落 |
+| `docs.json` 的 `seo.indexing` | 设为 `all` 时，隐藏页与 `noindex` 页面也进入检索与索引 |
+| 页面 frontmatter 的 `contextual` | 覆盖该页的上下文菜单，设为 `options: []` 可以关闭菜单 |
+
+站点级约定写入 `markdown.instructions`，AI 在每个页面都能读到：
+
+```json docs.json
+{
+  "markdown": {
+    "instructions": [
+      "插件代码中的资源路径一律使用 /pkg/ 开头的绝对路径。",
+      "示例优先使用 TypeScript，并保留 mn.api 的能力判断。"
+    ]
+  }
+}
+```
+
+交互组件（图表、筛选器、计算器）在 Markdown 导出中只保留标题、描述、替代文本与链接，由状态或浏览器 API 生成的内容不会出现。这部分信息需要出现在 Markdown 中时，用 `<Visibility for="agents">` 补充静态文本。
+
+# 常见问题
+
+<AccordionGroup>
+  <Accordion title="MCP 服务返回 404">
+    确认地址为站点根地址加 `/mcp`，而非某一条页面的地址。访问 `/.well-known/mcp` 可以查看服务登记的地址；该文档同样返回 404 时，说明 MCP 服务尚未启用。
+  </Accordion>
+  <Accordion title="llms.txt 返回 404">
+    先用 `/.well-known/llms.txt` 尝试同一份内容。站点部署在反向代理之后时，`llms.txt`、`llms-full.txt`、`/_llms/*`、`/skill.md` 与 `/.well-known/*` 需要一并转发到 Mintlify。
+  </Accordion>
+  <Accordion title="AI 生成的字段与模板不符">
+    模板字段以[最小打包](/zh/basic-package)与[接入插件](/zh/template-plugins)为准。在提示词中要求先检索「场景模板配置」再写字段，可以避免沿用旧版本的字段名。
+  </Accordion>
+  <Accordion title="英文页面未出现在 llms.txt 中">
+    `llms.txt` 只列默认语言的页面。英文内容通过导航或 MCP 检索访问，检索时可以按语言过滤。
+  </Accordion>
+</AccordionGroup>
+
