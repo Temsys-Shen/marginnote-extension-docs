@@ -71,7 +71,6 @@
           {
             "group": "深入插件",
             "pages": [
-              "zh/best-practice",
               "zh/network",
               "zh/paths",
               "zh/menu-commands",
