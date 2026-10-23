@@ -2,11 +2,18 @@
 title: "网络请求限制"
 ---
 
-# 请求限制
+# 连接范围
 
-`https:` 与 `wss:` 可以连接。这意味着插件可以直接引用 CDN 上的脚本、样式、字体与图片。
+插件面板允许 `https:` 与 `wss:` 连接，也允许本机回环地址上的 HTTP 与 WebSocket 连接。
 
-需要注意的是，`http:` 与 `ws:` 不能连接。
+本机连接来源仅限以下地址，端口范围不受限制：
+
+- `http://localhost:<端口>`
+- `http://127.0.0.1:<端口>`
+- `ws://localhost:<端口>`
+- `ws://127.0.0.1:<端口>`
+
+公网 `http:` 与公网 `ws:` 连接仍然拒绝。`0.0.0.0`、`::1`、局域网 IP 与自定义主机名不在允许列表内。
 
 # 跨域请求
 
@@ -23,28 +30,25 @@ Access-Control-Allow-Origin: mnpanel://panel
 
 # 内容安全策略
 
-面板的每条响应都带有内容安全策略（CSP），页面能加载的资源与能发起的连接由该策略限定。
+面板的每条响应都带有内容安全策略（CSP），页面可以加载的资源与可以发起的连接由该策略限定。
 
-- 加载资源：只放行面板自身的文件、`mnpanel:` 与 `https:`，脚本、样式、图片、字体、音视频与 iframe 均受此约束。
-- 发起连接：放行面板自身的文件、`mnpanel:` 与 `https:`，另外还会放行 `wss:`、`data:` 与 `blob:`。
+- 加载资源：允许面板同源资源、`mnpanel:`、`https:` 与 `localhost`、`127.0.0.1` 的 HTTP 资源。脚本、样式、图片、字体、音视频与 iframe 均受此规则约束。
+- 发起连接：允许面板同源资源、`mnpanel:`、`https:`、`wss:`、本机 HTTP、本机 WebSocket、`data:` 与 `blob:`。
+- 补充来源：图片与音视频额外允许 `data:` 与 `blob:`；字体额外允许 `data:`。
 - 禁用项：`object` 标签、`<base>` 标签与表单提交。
 
 策略逐条限定来源，完整取值如下：
 
 ```text
-default-src 'self' mnpanel: https:
-connect-src 'self' mnpanel: https: wss: data: blob:
-script-src  'self' mnpanel: https:
-style-src   'self' mnpanel: https:
-img-src     'self' mnpanel: https:
-media-src   'self' mnpanel: https:
-font-src    'self' mnpanel: https:
-frame-src   'self' mnpanel: https:
-object-src  'none'
-base-uri    'none'
+default-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:*
+connect-src 'self' mnpanel: https: wss: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:* data: blob:
+script-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:* 'unsafe-inline' 'unsafe-eval'
+style-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:* 'unsafe-inline'
+img-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:* data: blob:
+media-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:* data: blob:
+font-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:* data:
+frame-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:*
+object-src 'none'
+base-uri 'none'
 form-action 'none'
 ```
-
-<Note>
-  `script-src` 不含 `unsafe-eval`，因此 `eval` 与 `new Function` 都不能使用。同理，`setInterval`和`setTimeout`的传字符串的用法同样会被禁用。
-</Note>
