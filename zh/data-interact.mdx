@@ -87,6 +87,8 @@ const shot = await fetch('/bridge/v1/notes/' + noteid + '/render?format=png&widt
 const blob = await shot.blob();
 ```
 
+关于路径`/bridge/v1` 的行为以及其他可用路径，参见 [路径系统](/zh/paths) 。
+
 # 完整示例
 
 以摘录制卡（如单词卡）为例Ï，一个通常的处理是：<br />插件获取当前上下文的信息后，据此取出卡片数据中的相关信息，最后根据实际需求为处理完成的卡片进行标记。

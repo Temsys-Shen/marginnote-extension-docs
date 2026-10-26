@@ -131,12 +131,10 @@ const bindPanelMessage = (panel, context) => {
 </script>
 ```
 
-`mn.call`的 Promise 返回值在包括但不限于下列情形时会进入失败分支：
+`mn.call`返回 Promise 的两种情况：
 
-- 未注册`onMessage`
-- 插件被禁用或暂停
-- 回调抛出异常
-- 返回值无法序列化
+- resolve：正常返回、`ADDON_CALL_FAILED`、`ADDON_BAD_RESULT` 
+- reject：`ADDON_THREW` （如`JSON.stringify` 失败）
 
 ## 从 main.js 调用面板
 
@@ -214,11 +212,13 @@ const database = Database.sharedInstance();
 
 ### `panel.putMedia(key, data, type)`
 
-将二进制图片数据交给面板。页面通过 `/media/<key>` 引用该数据。`data` 为空时，MarginNote 会删除对应的键。
+将媒体数据存入面板。面板可通过 `/media/<key>` 获取该数据。`data` 为空时，对应的数据和键将会被删除。
+
+- `type`: MIME TYPE，如`'image/jpeg'`
 
 ### `panel.clearMedia()`
 
-清空当前面板的媒体缓存。较大的图片数据建议通过媒体缓存传递，避免放入 JSON 或 `post()` 数据。
+清空当前面板的媒体缓存。较大的媒体数据建议通过媒体缓存传递，避免放入 JSON 或 `post()` 数据。
 
 ## 显示和隐藏
 
