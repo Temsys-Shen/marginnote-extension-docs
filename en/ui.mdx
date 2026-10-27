@@ -1,0 +1,68 @@
+---
+title: "Controlling the UI"
+---
+
+# Window size
+
+On first load, the panel uses `panelWidth` and `panelMaxHeight` from `mnaddon.json`. When they are omitted, the defaults are 380 and 560 respectively.
+
+When the window height changes, MN applies the following rule:
+
+```text
+h' = MIN(MAX(h, 54), maxContentHeight)
+```
+
+`maxContentHeight` defaults to 560. If the add-on has a `main.js`, you can change it in code:
+
+```javascript main.js
+var p = AddonWebPanel.panel();
+p.maxContentHeight = 760
+```
+
+See [Beyond the panel](/en/jsaddon) for details about `main.js`.
+
+## Top drag bar
+
+Every panel has a 36 px drag bar at the top, so avoid placing interactive UI elements there. You can read this height from the CSS variable `--mn-drag-h`.
+
+## Changing the window size
+
+- `mn.height(h)`: sets the page height. No animation.
+- `mn.fit()`: sets the panel **height** to the height of `<html>`. MN calls this once after the page loads; call it again whenever the content changes.
+- `mn.size(w, h)`: sets both the panel width and height. This is the only call that can change the width. Animated.
+
+# Panel modes
+
+Panels have two modes: `workspace` and `mini`. Design two layouts for your add-on, one for each mode.
+
+## Changing the panel mode
+
+`mn.mode(m)` only flips the mode flag; it does not resize the panel. Calling `mode` without also calling `size` changes nothing visible, so you have to resize the window yourself:
+
+```javascript
+mn.mode('mini');
+// then
+mn.size(210, 54);
+// or
+mn.fit();
+```
+
+After the mode changes, MN notifies the page in two ways:
+
+- It updates the `data-mode` attribute on `<html>`.
+- It updates `mn.currentMode`.
+
+## Adapting to both modes
+
+The simplest way to adapt a panel to the two modes is with styles. Because MN updates the `data-mode` attribute, CSS can handle it automatically:
+
+```css
+:root[data-mode="mini"] body { padding: 6px 10px }
+:root[data-mode="mini"] .fold { display: none }
+```
+
+If you need logic, read `mn.currentMode`, or attach a `MutationObserver` to the root element to watch for changes to `data-mode`.
+
+# Closing and reloading
+
+Call `mn.close()` or `mn.reload()` to close or reload the add-on panel. Either call discards all in-memory data.

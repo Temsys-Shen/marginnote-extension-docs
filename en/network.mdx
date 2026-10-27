@@ -1,0 +1,54 @@
+---
+title: "Network restrictions"
+---
+
+# Connection scope
+
+The add-on panel allows `https:` and `wss:` connections, plus `http:` and `ws:` connections to loopback addresses on the local machine.
+
+Local connections are limited to the following addresses, and any port is allowed:
+
+- `http://localhost:<port>`
+- `http://127.0.0.1:<port>`
+- `ws://localhost:<port>`
+- `ws://127.0.0.1:<port>`
+
+Non-local `http:` and `ws:` connections, as well as `0.0.0.0`, `::1`, LAN IPs, and custom hostnames, are all blocked.
+
+# Cross-origin requests
+
+The panel's origin is `mnpanel://panel`. You may need this value when configuring CORS on your server:
+
+```text
+Access-Control-Allow-Origin: mnpanel://panel
+```
+
+# Navigation
+
+- When the user clicks an `http:` or `https:` link, the address is handed to the system browser and the panel does not navigate.
+- Changing `location` from the page, or submitting a form, has no effect. Use `fetch` to send data to a server.
+
+# Content security policy
+
+Every panel response carries a content security policy (CSP) that limits the resources the page can load and the connections it can make.
+
+- Loading: same-origin panel resources, `mnpanel:`, `https:`, and HTTP resources from `localhost` and `127.0.0.1`. This covers scripts, styles, images, fonts, audio/video, and iframes.
+- Connections: same-origin panel resources, `mnpanel:`, `https:`, `wss:`, local HTTP, local WebSocket, `data:`, and `blob:`.
+- Additional sources: images and media may also use `data:` and `blob:`; fonts may also use `data:`.
+- Blocked: `object` tags, `<base>` tags, and form submission.
+
+Each directive lists its sources explicitly. The complete policy is:
+
+```text
+default-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:*
+connect-src 'self' mnpanel: https: wss: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:* data: blob:
+script-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:* 'unsafe-inline' 'unsafe-eval'
+style-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:* 'unsafe-inline'
+img-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:* data: blob:
+media-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:* data: blob:
+font-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:* data:
+frame-src 'self' mnpanel: https: http://localhost:* http://127.0.0.1:*
+object-src 'none'
+base-uri 'none'
+form-action 'none'
+```

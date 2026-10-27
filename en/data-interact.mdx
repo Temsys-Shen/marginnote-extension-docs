@@ -1,0 +1,118 @@
+---
+title: "Data exchange"
+---
+
+An add-on panel can talk to MarginNote to read information, modify it, and trigger actions.
+
+# Request methods
+
+Requests come in two flavors: `GET` and `POST`. `GET` requests can be sent directly; `POST` requests must declare the method explicitly:
+
+<CodeGroup>
+
+```javascript GET
+const state = await mn.api('/ui-state');
+const topicid = state.state.topicid;
+```
+
+```javascript POST
+await mn.api('/notes/addon-values', {
+  method: 'POST',
+  body: { noteIds: [noteid], values: { status: 'done' } }
+});
+```
+
+</CodeGroup>
+
+# Available endpoints
+
+The endpoints a panel can call are a subset of the full MarginNote CLI surface. See the `API reference` for everything an add-on can use.
+
+Besides `/bridge/v1`, the page can reach other paths served by the panel itself, including files inside the add-on package, images, and panel resize controls. These paths never reach MarginNote and are not subject to the allowlist. See [Path system](/en/paths) for the syntax.
+
+# Error handling
+
+`mn.api` does not reject on failure. Instead it returns the error object as a normal response body, so `try...catch` cannot catch a failed request.
+
+Here is an example error response:
+
+```json
+{
+  "error": {
+    "code": "IN_PROCESS_NOT_ALLOWED",
+    "message": "This endpoint is not on the web panel allowlist.",
+    "retryable": false
+  }
+}
+```
+
+To decide whether a call succeeded, first check whether the response contains an `error` field, then interpret the rest according to the specific request:
+
+```javascript
+const r = await mn.api('/notes/' + noteid + '/edits', {
+  method: 'POST',
+  body: { ops: [{ op: 'setTitle', text: 'New title' }] }
+});
+
+if (r.error) {
+  mn.log(r.error.code, r.error.message);
+} else if (r.persisted) {
+  mn.log('Written and verified');
+}
+```
+
+# Endpoints that do not return JSON
+
+`mn.api(path, opts)` is equivalent to calling `fetch` on `/bridge/v1` and **parsing the response as JSON**:
+
+```javascript
+fetch('/bridge/v1' + path, opts).then(r => r.json())
+```
+
+When an endpoint returns something other than JSON, the call throws a `SyntaxError` while parsing and you cannot get the raw content. Use `fetch` directly for these endpoints. Examples:
+
+- `GET /guide` returns Markdown.
+- `GET /notes/{noteid}/render` returns a long card image or a PDF.
+- `GET /documents/{bookmd5}/pages/{index}/content/{contentId}` returns an image.
+- `GET /bundles/{bundleId}/files` with a `path` returns the raw bytes of that file.
+
+Choose how to read the response based on its content type:
+
+```javascript
+// The response is Markdown
+const text = await (await fetch('/bridge/v1/guide')).text();
+
+// The response is a byte stream
+const shot = await fetch('/bridge/v1/notes/' + noteid + '/render?format=png&width=880');
+const blob = await shot.blob();
+```
+
+For the behavior of `/bridge/v1` and the other available paths, see [Path system](/en/paths).
+
+# Complete example
+
+Take excerpt-to-card workflows (vocabulary cards, for instance). A typical handler goes like this: the add-on reads the current context, pulls the relevant data out of the card, and finally marks the card according to what it actually did.
+
+```javascript
+mn.on('excerpt', async d => {
+  // 1. Read the current UI state to get the study set and the focused card
+  const ui = await mn.api('/ui-state');
+  const topicid = ui.state.topicid;
+
+  // 2. Read the card's title, body, hashtags, and add-on fields
+  const got = await mn.api('/notes/batch-get', {
+    method: 'POST',
+    body: { noteIds: [d.noteid], addons: ['mn.hello'] }
+  });
+  const card = got.items[0];
+  if (!card.found) return;
+
+  // Process the data
+
+  // 3. Write the result back into this add-on's own fields
+  await mn.api('/notes/addon-values', {
+    method: 'POST',
+    body: { noteIds: [d.noteid], values: { status: 'done', topicid } }
+  });
+});
+```

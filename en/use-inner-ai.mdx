@@ -1,0 +1,127 @@
+---
+title: "Using MN's built-in AI"
+---
+
+MN ships with a built-in AI service. Add-ons do not need to integrate a model or store their own API keys. MN handles what data is sent, how much quota is consumed, and whether the user is informed.
+
+# Declaring AI tasks
+
+Tasks are declared in the template, so adding a task only requires editing the template; MN itself does not change. `mnaddon.json` needs no extra fields for this.
+
+```json template.json
+{
+  "id": "u-hello",
+  "name": "Hello World",
+  "aiTasks": [
+    {
+      "id": "explain",
+      "title": "Explain this",
+      "trigger": "user",
+      "scope": "word_sentence",
+      "tier": 1,
+      "output": { "reply": "string" },
+      "required": ["reply"],
+      "prompt": "Explain in one Chinese sentence what the given word or phrase means in the context of these study notes. Put that one sentence in reply, do not list senses, and do not add information that is not in the source."
+    }
+  ]
+}
+```
+
+A task accepts the following fields:
+
+- `id`: the identifier used to invoke the task.
+- `title`: the task name shown to the user.
+- `trigger`: how the task is started. Defaults to `"user"`.
+  - `"user"` means the task only runs after the user triggers it.
+  - `"auto"` allows the add-on to start the task on its own, after obtaining consent once.
+- `scope`: the scope of the material that is sent.
+  - `word_sentence` lets the add-on provide one word and the sentence containing it. The word is limited to 80 characters and the sentence to 600 characters.
+  - `card_text` makes MN take the title and body from the card. Whatever the add-on passes is ignored.
+  - `attempt_ink` is for reading handwritten content on a card. Handwriting, text boxes, and formula boxes are merged into one image and sent to a handwriting recognition model. If the card has no handwritten content, the call is rejected.
+- `prompt`: the prompt text.
+- `output`: a JSON Schema for the return value. Values may only be `"string"`, `"number"`, and `"bool"`.
+- `required`: the fields in `output` that must be present.
+- `tier`: the model tier. `0` is the fastest, `2` the most capable. Defaults to `0`.
+
+# Running AI
+
+Call a declared task with `mn.ai(cardId, taskId, params)`.
+
+`params` depends on `scope`:
+
+- For `word_sentence`, the add-on supplies the material in `params` and must provide `word` and `sentence`.
+- For `card_text`, MN takes the material from the card; `params` is not sent and its contents are ignored.
+- For `attempt_ink`, MN builds the image from the card, and the add-on supplies everything else in `params`, such as the question and the reference answer.
+
+Here is a call for the task defined above:
+
+```javascript index.html
+// word_sentence
+var r = await mn.ai(noteid, "explain", { word: word, sentence: sentence });
+if (r && r.ok) {
+  show(r.json.reply);
+}
+// card_text
+var r = await mn.ai(noteid, "make_summary", {});
+// attempt_ink
+// TODO: add an example
+```
+
+The result takes one of two shapes:
+
+- On success, `{ ok: true, text, json }`.
+  - `json`: the object parsed according to the task's `output`.
+  - `text`: the raw text returned by the model.
+- On failure, `{ ok: false, error }`, where `error` is one of:
+  - `bad_args`: the material does not meet the requirements, or the task declaration is invalid.
+  - `bad_output`: the model returned the wrong field structure, and nothing was written to the card.
+  - `task_used`: MN sends each task on a given card only once; repeated requests are rejected.
+  - `declined`: the user chose to decline in the prompt.
+  - `consent_required`: an auto-started task has not obtained consent yet.
+  - `max_required`: the task requires a MAX subscription.
+  - `no_service`: no AI service is configured in the app.
+  - `rate_limited`: too many requests.
+  - `no_ticket`: the card was not assigned to this add-on's AI.
+  - `not_owner`: the AI on this card was assigned to a different add-on.
+  - `network`: the request did not reach the service.
+  - `no_ink`: there is nothing usable in the answer area.
+
+<Tip>
+  AI processing takes several seconds. The user may switch to another card while waiting, so write the result back to the card that was recorded when the request started, not the card that is focused now.
+</Tip>
+
+<Note>
+  MN asks for the user's consent before deducting quota. A second request sent while that prompt is still open is treated as a decline. Disable the button while a request is in flight to avoid double clicks.
+</Note>
+
+# Assigning AI to an add-on
+
+Excerpt tools and highlight shortcuts in a template each carry an `ai_addon` field holding an add-on id. It states that cards excerpted with that tool are handed to that add-on for processing. Highlight shortcuts are the row of quick buttons that appears on the menu bar when you select text in a document.
+
+In **Edit scene template → Card and excerpt menus**, you can set `AI assigned to: …` when adding a highlight shortcut.
+
+```json template.json
+{
+  "excerptShortcuts": [
+    {
+      "title": "Add to vocabulary list",
+      "hashtag": "#Pending",
+      "ai_addon": "mn.hello"
+    }
+  ]
+}
+```
+
+For cards excerpted with that tool, only the add-on named by `ai_addon` may call AI on them. Once a card has been assigned to another add-on, this add-on's task calls on that card are rejected with `not_owner`; if the tool has AI disabled, the calls fail with `no_ticket`.
+
+# Reading the task list from the template
+
+The page can read the tasks declared by the current template and build buttons from them, so adding a task to the template requires no add-on change:
+
+```javascript index.html
+var t = await mn.api("/immersive/template");
+var tasks = (t && t.aiTasks) || [];
+tasks.forEach(function (task) {
+  addButton(task.title || task.id, function () { runAI(task.id); });
+});
+```

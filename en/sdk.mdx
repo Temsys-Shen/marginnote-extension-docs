@@ -1,0 +1,168 @@
+---
+title: "Interacting with MN through window.mn"
+description: "The mn instance injected into a scene add-on panel"
+---
+
+When a scene add-on loads, MN injects an `mn` instance into the context. Access its members to interact with MN.
+
+```typescript
+window.mn
+├── version: number          // SDK version
+├── currentMode: "workspace" | "mini"
+├── lang: string             // app interface language
+├── locale: string           // system locale
+├── theme: "light" | "dark"	 // white, sepia, green = light; gray, black = dark
+├── _drag
+├── api(path, opts) => Promise<json>
+├── ai(noteid, taskId, params) => Promise<json>
+├── call(name, data) => Promise<json>  // sends a message to main.js and returns its result
+├── on(event, cb)
+├── fit() / height(h) / size(w,h) / mode(m) / close() / reload()
+└── log(...args)
+```
+
+# Read-only information
+
+The following members are read-only:
+
+- version: the add-on SDK version.
+- currentMode: `workspace` or `mini`. Your add-on is responsible for adapting to each mode.
+- lang: the app interface language.
+- locale: the system region.
+- theme: `light` or `dark`. White, sepia, and green map to `light`; gray and black map to `dark`.
+- \_drag: purpose not yet documented.
+
+```javascript
+>	[mn.version,mn.currentMode,mn.lang,mn.locale,mn.theme,mn._drag]
+<	[
+	  1,
+	  "workspace",
+	  "zh-Hans",
+	  "zh-CN",
+	  "dark",
+	  false
+	]
+```
+
+# Methods
+
+## api(path, opts)
+
+Performs CRUD operations on MN data. It is called the same way as the MarginNote CLI, but some endpoints are unavailable. To know exactly which endpoints are available, query the capabilities.
+
+The following code shows how to work with `mn.api`:
+
+<CodeGroup>
+
+```javascript GET
+// 😋 Get every available API capability
+const capabilities = mn.api("/capabilities")
+
+// Get the study set's cards in document order
+const tree = await mn.api("/study-sets/" + topicid + "/tree?sort=document");
+
+// Get the id of the currently open study set
+const st = await mn.api("/ui-state");
+```
+
+```javascript POST
+await mn.api('/notes/' + id + '/edits', {method: 'POST', body: {ops: [
+  {op: 'setTitle', text: '…', expectedPrefix: 'start of the current title'},
+  {op: 'appendComment', text: '…'},
+  {op: 'deleteComment', index: 2, expectedPrefix: '…'},
+  {op: 'removeHashtags', hashtags: ['#VocabPending']},
+  {op: 'setAddonValues', addon: 'anything', values: {status: 'done'}}
+], confirm: true, syncReview: false}});
+```
+
+</CodeGroup>
+
+For hands-on examples, see [Data exchange](/en/data-interact).
+
+## ai(noteid, taskId, params)
+
+`mn.ai` lets you run tasks on MN's built-in AI. The task id must be declared in `template.json` before you call it.
+
+```json template.json
+{
+  "aiTasks": [
+    {
+      "id": "starter_explain",
+      "title": "Explain this",
+      "trigger": "user",
+      "scope": "word_sentence",
+      "tier": 1,
+      "output": {"reply": "string"},
+      "required": ["reply"],
+      "prompt": "Explain in one sentence what the given word means in the context of studying this note."
+    }
+  ],
+  ...
+}
+```
+
+Here is how to call it:
+
+```javascript
+const r = await mn.ai(
+  noteid,
+  "starter_explain",
+  {
+    word: "photosynthesis",
+    sentence: "..."
+  }
+);
+if(r.ok) console.log(r.json.reply);
+```
+
+For hands-on examples, see [Using MN's built-in AI](/en/use-inner-ai).
+
+## call(name, data)
+
+Calls a function defined in `main.js` and receives its return value.
+
+For hands-on examples, see [Beyond the panel](/en/jsaddon).
+
+## on(event, cb)
+
+`mn.on` listens for events sent by MN. You must first declare the events you want in `mnaddon.json`.
+
+```json mnaddon.json highlight={9} focus={9}
+{
+	"addonid": "mn.hello",
+	"title": "Hello World",
+	"version": "0.1.0",
+ 	"author": "Me",
+  	"marginnote_version_min": "4.5.0",
+  	"panel": "index.html",
+  	"icon": "hello.png",
+	"events":["excerpt"]
+}
+```
+
+```javascript
+mn.on("excerpt", async (card) => {
+  console.log(`New excerpt added: ${card.noteid}`)
+});
+```
+
+For hands-on examples, see [Event system](/en/events).
+
+## UI methods
+
+- fit(): sets the panel height to the height of `<html>`.
+- height(h): sets the panel height.
+- size(w, h): sets the panel width and height.
+- mode(m): sets the panel mode to `workspace` or `mini`.
+- close(): closes the panel.
+- reload(): reloads the panel.
+
+For hands-on examples, see [Controlling the UI](/en/ui).
+
+## log
+
+Writes a log entry.
+
+Click the "Add-on" label at the top of the panel **five** times in a row to open the log panel.
+
+![Image](/images/image-1.png "Image")

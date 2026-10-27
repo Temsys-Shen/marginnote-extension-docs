@@ -1,0 +1,109 @@
+---
+title: "Event system"
+---
+
+
+When an add-on panel needs to know what happens inside MN, it listens for events. An event must be declared before the panel can receive it from MN.
+
+# Declaring events
+
+An event must be declared before the add-on can receive it; otherwise listeners for it have no effect.
+
+Declare events with the `events` field in `mnaddon.json`:
+
+```json mnaddon.json highlight={9} focus={9}
+{
+  "addonid": "mn.hello",
+  "title": "Hello World",
+  "version": "0.1.0",
+  "author": "Me",
+  "marginnote_version_min": "4.5.0",
+  "panel": "index.html",
+  "icon": "hello.png",
+  "events": ["excerpt", "comments"]
+}
+```
+
+The following events can be declared:
+
+- `excerpt`: an excerpt was created.
+  - Payload: `{noteid, opened}`.
+  - Creating an excerpt wakes every panel that receives matching events in `mini` mode. `opened` is `true` when the panel was actually opened, and `false` when opening failed or the panel was already open.
+- `comments`: the comments on a card changed (collapsed, expanded, added, edited, and so on).
+  - Payload: `{noteid?, noteids}`.
+  - When the comments of an excerpt card change, both the card in the mind map and the annotation card in the document appear in `noteids`, but `noteid` is only the card in the mind map that changed.
+- `practice`: the answer sheet editor closed. The answer sheet is a full-card screenshot with annotations. ⚠️ Only fires when the answer sheet was opened by this add-on.
+  - Payload: `{noteid, action, saved, commentId}`.
+- `synced`: sync merging finished.
+  - No payload.
+- `undo`: an undo or redo happened.
+  - No payload.
+- `imported`: cards were added to a study set in bulk.
+  - No payload.
+
+# Listening for events
+
+```javascript
+mn.on('excerpt', function (d) {
+  mn.api('/notes/batch-get',
+    {
+      method: 'POST',
+      body: { noteIds: [d.noteid] } }
+    ).then(function (r) { render(r); });
+});
+```
+
+<Warning>
+  Duplicate events for the same event and the same card within 1.5 seconds are dropped.
+</Warning>
+
+<Note>
+  Events pushed before the page finishes loading are queued and delivered together once loading completes.
+</Note>
+
+# Filtering excerpt events
+
+If the user creates an excerpt while the panel is closed, MN first opens the panel in `mini` mode, then pushes the excerpt event, with `opened` set to `true`. If you are done, call `mn.close()` to dismiss the panel.
+
+If you only care about a certain kind of excerpt, narrow it down with `excerptClaim`:
+
+```json highlight={15-18} focus={15-18}
+{
+  "addonid": "mn.vocab",
+  "author": "MarginNote",
+  "title": "Reading Vocabulary",
+  "version": "0.13.1",
+  "marginnote_version_min": "4.5.0",
+  "immersiveOnly": true,
+  "panel": "index.html",
+  "icon": "vocab2.png",
+  "panelWidth": 420,
+  "panelMaxHeight": 620,
+  "events": [
+    "excerpt"
+  ],
+  "excerptClaim": {
+    "hashtag": "#VocabPending",
+    "configKey": "pendingTag"
+  }
+}
+```
+
+With this configuration, only new excerpts tagged `#VocabPending` trigger the add-on's `excerpt` event.
+
+`configKey` is optional. When set, template configuration can override the hashtag. With the configuration above, the value comes from `pluginConfigs["mn.vocab"]["pendingTag"]` in the template.
+
+If `excerptClaim` is omitted, every excerpt opens the add-on panel and triggers the `excerpt` event.
+
+# Card menu commands
+
+`cardCommand` does not need to be declared in `events`. When the user picks a declared command from the card menu, the `cardCommand` event fires:
+
+```javascript
+mn.on('cardCommand', function (d) {
+  var commandID = d.id
+  var noteID = d.noteID
+});
+```
+
+For command configuration, see [Card and excerpt menu commands](/en/menu-commands).

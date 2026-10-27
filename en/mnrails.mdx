@@ -1,0 +1,249 @@
+---
+title: "Creating an add-on project with MN Rails"
+description: "Create, build, package, and deploy MarginNote add-ons quickly"
+---
+
+MN Rails is the modern scaffold for MarginNote add-ons. It handles project creation, building, packaging, and deployment, and it ships a rich set of templates and scaffolds to get you productive quickly.
+
+# Creating a project
+
+Create a project with the `create` command:
+
+<CodeGroup>
+
+```bash npm
+npm create mn-rails@latest
+```
+
+```bash pnpm
+pnpm create mn-rails@latest
+```
+
+```bash yarn
+yarn create mn-rails
+```
+
+```bash bun
+bun create mn-rails
+```
+
+</CodeGroup>
+
+
+The command runs interactively:
+
+```
+❮ pnpm create mn-rails@latest
+? Select a framework
+❯ React (React 19 + TypeScript + Vite)
+  Vue (Vue 3 + TypeScript + Vite)
+  Svelte (Svelte 5 + TypeScript + Vite)
+
+↑↓ navigate • ⏎ select
+
+```
+
+## Non-interactive creation
+
+Every option can be passed on the command line:
+
+```bash
+npx mn-rails@latest init my-addon \
+  --framework react \
+  --kind panel \
+  --addonid com.example.my-addon \
+  --author Example \
+  --title "My Add-on" \
+  --package-manager pnpm \
+  --no-git
+```
+
+An explicitly specified target directory must be empty. If you omit the directory and the current directory contains visible files, the command creates a subdirectory after you confirm its name.
+
+## Frameworks and add-on shapes
+
+| Framework | What the template includes |
+| --- | --- |
+| React | React 19, TypeScript, and Vite |
+| Vue | Vue 3, TypeScript, and Vite |
+| Svelte | Svelte 5, TypeScript, and Vite |
+
+Two add-on shapes are available:
+
+- Panel only: a standard `scene add-on` whose page entry is `index.html`. MarginNote generates the add-on panel and menus from `mnaddon.json`.
+- Hybrid: a combination of a `scene add-on` and a `classic add-on`, with a web page and a two-way bridge module. See [Beyond the panel](/en/jsaddon).
+
+
+# Project structure
+
+<Tree>
+  <Tree.Folder name="my-addon" defaultOpen>
+    <Tree.File name="index.html" />
+    <Tree.File name="mnaddon.json" />
+    <Tree.File name="eslint.config.mjs" />
+    <Tree.File name="vite.config.ts" />
+    <Tree.File name="package.json" />
+    <Tree.Folder name="eslint">
+      <Tree.File name="framework.mjs" />
+    </Tree.Folder>
+    <Tree.Folder name="src" defaultOpen>
+      <Tree.File name="App.tsx" />
+      <Tree.File name="main.tsx" />
+      <Tree.File name="bridge.ts" />
+    </Tree.Folder>
+    <Tree.Folder name="public">
+      <Tree.File name="icon.png" />
+    </Tree.Folder>
+    <Tree.Folder name="template">
+      <Tree.File name="template.json" />
+      <Tree.File name="localizations.json" />
+    </Tree.Folder>
+    <Tree.Folder name="native">
+      <Tree.File name="main.js" />
+      <Tree.File name="PanelBridge.js" />
+    </Tree.Folder>
+  </Tree.Folder>
+</Tree>
+
+`native/` exists only in hybrid projects. Panel-only projects do not create this directory, and their build output must not contain a root-level `main.js`.
+
+Key files and what they do:
+
+| Path | Purpose |
+| --- | --- |
+| `index.html` | Panel entry. |
+| `mnaddon.json` | Add-on manifest: identity, name, version, entry, and events. |
+| `eslint.config.mjs` | Shared ESLint configuration. |
+| `eslint/framework.mjs` | Framework rules for React, Vue, or Svelte. |
+| `src/` | React, Vue, or Svelte page code. |
+| `public/` | Static assets copied verbatim to the build output root by Vite. |
+| `template/template.json` | Scene template configuration. |
+| `template/localizations.json` | Localized display names for the scene template. |
+| `vite.config.ts` | Vite configuration. |
+
+# Project commands
+
+The project provides the following scripts:
+
+| Command | Purpose |
+| --- | --- |
+| `lint` | Runs ESLint with the framework's recommended rules. |
+| `lint:fix` | Fixes ESLint issues automatically where possible. |
+| `typecheck` | Runs type checking for the current framework. |
+| `check` | Runs ESLint and then type checking. |
+| `build` | Builds the page with Vite and validates the add-on directory and `/pkg/` references. |
+| `package` | Produces the `.mnaddon` and `.mntemplate` installers. |
+| `sync` | Copies the build output into the local MarginNote and restarts the app. |
+| `doctor` | Checks the project, the build output, and the MarginNote environment. |
+
+<CodeGroup>
+
+```bash npm
+npm run lint
+npm run lint:fix
+npm run typecheck
+npm run check
+npm run build
+npm run package
+npm run sync
+npm run doctor
+```
+
+```bash pnpm
+pnpm lint
+pnpm lint:fix
+pnpm typecheck
+pnpm check
+pnpm build
+pnpm package
+pnpm sync
+pnpm doctor
+```
+
+```bash yarn
+yarn lint
+yarn lint:fix
+yarn typecheck
+yarn check
+yarn build
+yarn package
+yarn sync
+yarn doctor
+```
+
+</CodeGroup>
+
+# Building and deploying
+
+First build:
+
+<CodeGroup>
+
+```bash npm
+npm run build
+```
+
+```bash pnpm
+pnpm build
+```
+
+```bash yarn
+yarn build
+```
+
+</CodeGroup>
+
+The build output goes to `dist/`. Both `package` and `sync` require an existing `dist/` that passes the output checks.
+
+Local deployment:
+
+<CodeGroup>
+
+```bash npm
+npm run sync
+```
+
+```bash pnpm
+pnpm sync
+```
+
+```bash yarn
+yarn sync
+```
+
+</CodeGroup>
+
+`sync` performs these steps:
+
+1. Verifies that `dist/` matches the current add-on shape.
+2. Locates the local MarginNote add-on directory.
+3. Replaces files through a temporary directory, restoring the previous add-on if anything fails.
+4. Restarts MarginNote.
+
+Local deployment is supported on macOS only.
+
+# Producing installers
+
+<CodeGroup>
+
+```bash npm
+npm run package
+```
+
+```bash pnpm
+pnpm package
+```
+
+```bash yarn
+yarn package
+```
+
+</CodeGroup>
+
+Installers are written to `release/`:
+
+- `<addon-name>-<version>.mnaddon`: the compressed add-on directory.
+- `<template-name>-<version>.mntemplate`: a scene template package containing the template configuration, localization files, and add-on files.
+
+
+For how to write template configuration, see [Minimal package](/zh/basic-package) and [Adding add-ons](/zh/template-plugins).

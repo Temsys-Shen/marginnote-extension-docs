@@ -1,0 +1,172 @@
+---
+title: "Card and excerpt menu commands"
+---
+
+MN's popup menus (for excerpts, cards, and so on) can include commands defined by add-ons.
+
+# Declaring commands
+
+Declare commands in the `cardCommands` field of `mnaddon.json`.
+
+```json mnaddon.json
+{
+  "addonid": "mn.starter",
+  "title": "Starter",
+  "version": "0.3.0",
+  "marginnote_version_min": "4.5.0",
+  "panel": "index.html",
+  "cardCommands": [
+    {
+      "id": "annotate",
+      "title": { "zh-Hans": "添加批注", "en": "Add a comment" },
+      "when": { "addonValue": "status", "equals": "done" }
+    }
+  ]
+}
+```
+
+The available fields are:
+
+- `id` identifies the command. Templates reference the command by this value.
+- `title` is the text shown in the menu. It can be a string, or an object keyed by language with the text as value. Keys are `zh-Hans`, `zh-Hant`, `en`, and so on.
+- `when` narrows down which cards show the command. Omit it to show the command on every card.
+
+## Conditions and condition groups
+
+`when` decides whether the command appears in the menu. The evaluation never runs the add-on's page code, so only existing card data and fields previously written by add-ons are available. The conditions fall into the following categories.
+
+To test a field written by an add-on, use `addonValue`. It can compare the value or check whether the field exists:
+
+```json
+{ "addonValue": "status", "equals": "done" }
+{ "addonValue": "status", "in": ["a", "b"] }
+{ "addonValue": "status", "exists": false }
+```
+
+<Note>
+  See [Special cases](#special-cases) below for how `addonValue` is written.
+</Note>
+
+To test the card's own state, use the following:
+
+```json
+{ "hashtag": "#practice/question" }
+{ "hasExcerpt": true }
+{ "hasTitle": true }
+{ "hasChildren": false }
+```
+
+where:
+
+- `hashtag` tests whether the card carries the given hashtag.
+- `hasTitle` tests whether the card has a title.
+- `hasChildren` tests whether the card has child cards in the mind map.
+- `hasExcerpt` tests whether the card carries content excerpted from a document. It means the same as `sourceAnchor.hasExcerpt` in a `batch-get` response.
+
+To test the card's position in the mind map, use `parent`, `child`, and `descendant`. They are satisfied when the parent card, a child card, or any card further down satisfies the nested condition.
+
+### Combining conditions
+
+Conditions combine with `and`, `or`, and `not`. `and` requires every condition in the array to hold; `or` requires at least one; `not` requires the nested condition to fail. `and` and `or` take an array of conditions.<br />These groups nest freely: any entry in an array can itself be another group.
+
+### Example 1
+
+The `branch` command below appears only when the card has neither the `#practice/question` nor the `#practice/answer` hashtag, and none of its child cards carry `#practice/answer` either.
+
+```json mnaddon.json
+{
+  "id": "branch",
+  "when": {
+    "and": [
+      { "not": { "hashtag": "#practice/question" } },
+      { "not": { "hashtag": "#practice/answer" } },
+      { "child": { "not": { "hashtag": "#practice/answer" } } }
+    ]
+  },
+  "title": {"zh-Hans": "练习该分支", "en": "Practise this branch"}
+}
+```
+
+### Example 2
+
+The `choose_sense` command below appears when either the card's `status` field equals `pending`, or the card has no `status` field and carries the `#VocabPending` hashtag:
+
+```json mnaddon.json
+{
+  "id": "choose_sense",
+  "when": {
+    "or": [
+      { "addonValue": "status", "equals": "pending" },
+      { "and": [
+        { "not": { "addonValue": "status", "exists": true } },
+        { "hashtag": "#VocabPending" }
+      ] }
+    ]
+  },
+  "title": {
+    "zh-Hans": "选一个意思",
+    "zh-Hant": "選一個意思",
+    "en": "Pick a sense"
+  }
+}
+```
+
+### Special cases
+
+If the decision depends on something none of the conditions above can express, store the outcome in a card field first and let the menu test that field:
+
+```javascript
+await mn.api('/notes/' + id + '/edits',
+  {
+    method: 'POST',
+    body: {
+      ops: [{
+        op: 'setAddonValues',
+        addon: 'mn.starter',
+        values: {status: 'done'}
+      }],
+    confirm: true
+});
+```
+
+# Adding commands to menus
+
+Declaring a command in the add-on is only half the work; the template has to add it to a menu. The template's `selectionMenu` field registers MN's popup menus.
+
+- `cards` is the card menu, shown when you click a card in the mind map or outline.
+- `documents` is the card menu in documents, shown when you click a card that came from an excerpt.
+- `text` is the text selection menu, shown when you select text in a document.
+
+To add a command to a menu, append `addon.<addon-id>.<command-id>:` to that menu's array. **The trailing colon is required.**
+
+```json template.json
+{
+  "selectionMenu": {
+    "cards": [
+      "noteHighlight:",
+      "commentNote",
+      "addon.mn.starter.annotate:"
+    ],
+    "documents": [
+      "sendHighlight:",
+      "noteHighlight:",
+      "addon.mn.starter.annotate:"
+    ]
+  }
+}
+```
+
+# Receiving commands
+
+The page does not need to register `cardCommand` in `events`. Just listen for it in the page code:
+
+```javascript index.html
+mn.on('cardCommand', function (d) {
+  var commandID = d.id
+  var noteID = d.noteID
+});
+```
+
+<Note>
+  If the add-on panel is fully closed when the user clicks a command, MN first opens the panel in `mini` mode, then pushes the command event.
+</Note>

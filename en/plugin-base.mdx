@@ -1,0 +1,96 @@
+---
+title: "Scene add-on basics"
+mode: "default"
+---
+
+`Scene add-ons` are the new add-on type introduced in MN5. They are installed the same way as `classic add-ons`. Unless stated otherwise, "add-on" in this documentation refers to a `scene add-on`.
+
+# Add-on structure
+
+Scene add-ons are far simpler than classic add-ons. Here is the minimal directory of a scene add-on:
+
+<Tree>
+  <Tree.Folder name="project" defaultOpen>
+    <Tree.File name="mnaddon.json" />
+    <Tree.File name="index.html" />
+  </Tree.Folder>
+</Tree>
+
+<CodeGroup>
+
+```json mnaddon.json
+{
+  "addonid": "hello.world",
+  "title": "Hello World",
+  "version": "0.1.0",
+  "author": "Me",
+  "marginnote_version_min": "4.5.0",
+  "immersiveOnly": true,
+  "panel": "index.html"
+}
+```
+
+```html index.html
+<!DOCTYPE html>
+<html>
+
+<body>
+  <button onclick="ask()">Which study set is open?</button>
+  <div id="out"></div>
+
+  <script>
+    async function ask() {
+      var out = document.getElementById("out");
+      try {
+        var r = await mn.api("/ui-state");
+        var t = r.state.topicid;
+        out.textContent = t
+          ? "Current study set id: " + t
+          : "No study set is open";
+      } catch (e) {
+        out.textContent = "Something went wrong: " + e;
+      }
+    }
+  </script>
+</body>
+
+</html>
+```
+
+</CodeGroup>
+
+As you can see, a scene add-on is essentially an HTML web panel with an `mn` object injected into `window`.
+
+Zip the files at the project root so that they sit at the top level of the archive, rename the archive to `.mnaddon`, and you have a standard-compliant add-on.
+
+To install an add-on, click the three dots on the right of Settings → Add-ons → Import, then enable the add-on in a scene template.
+
+<Accordion title="How the add-on above looks once installed">
+  ![Image](/images/image.png "Image")
+</Accordion>
+
+# Manifest fields
+
+- addonid: the unique name of the add-on. Two add-ons with the same id are the same add-on; different ids mean different add-ons.
+- title: the name shown inside MN.
+- version: the version string shown inside MN.
+- author: the author name shown inside MN.
+- marginnote_version_min: the minimum MN version required by the add-on.
+- immersiveOnly: restricts the add-on to immersive mode (the new MN5 interface). <u>Defaults to false.</u> We recommend enabling it for scene add-ons.
+- panel: the HTML file that serves as the add-on panel.
+- icon: the icon file.
+- panelWidth: the panel width. Defaults to 380.
+- panelMaxHeight: the upper limit of the panel height. Defaults to 560.
+- events: declares the events the add-on can register for. Defaults to `[]`.
+- excerptClaim: declares which excerpts the add-on receives, in the form `{"hashtag": "#X", "configKey": "k"}`, where `configKey` is optional. See [Event system](/en/events).
+- cardCommands: commands in the card menu. See [Card and excerpt menu commands](/en/menu-commands).
+
+The list above is only a summary. Refer to the dedicated pages for the full configuration details.
+
+# About classic add-ons
+
+Classic add-ons are the add-on type supported by earlier versions of MN. Their entry point is `main.js` rather than a panel HTML file.
+
+To learn how to develop classic add-ons, see the older [MarginNote add-on development documentation](https://mn-docs.museday.top/).
+
+Classic and scene add-ons are not mutually exclusive; in fact, you can combine them. In the new add-on system, a scene add-on's panel and a classic add-on's script communicate through an event-based mechanism, and several control hooks are available. To learn how to combine the two, and how to use a panel and `main.js` together, see [Beyond the panel](/en/jsaddon).

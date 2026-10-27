@@ -175,7 +175,7 @@ if (r && r.available) {
 | 未声明 `cardCommands` | 写入 `addon.<id>.<cmd>:` | 菜单上没有该项 |
 | 声明 `cardCommands` | 写入对应条目 | 菜单上出现该项 |
 
-工具条按钮同理：插件在 `mnaddon.json` 中给出 `icon`，宿主合成 `addon.<插件id>.primary` 按钮，模板在 `bottom.modes[].tools` 中写入该代号。
+工具条按钮也要两侧同时写入。插件在 `mnaddon.json` 中给出 `icon`，MarginNote 读取该字段生成 `addon.<插件id>.primary` 按钮；模板把这一代号写进 `bottom.modes[].tools`，按钮才会出现。
 
 # 安装后无法使用的情形
 

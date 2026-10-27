@@ -1,0 +1,44 @@
+---
+title: "Setting an add-on icon"
+---
+
+# Icon requirements
+
+The icon must be a PNG image. 64×64 is the recommended size, though you can use a larger or smaller image if your design needs it.
+
+When MN draws the icon, it samples the saturation of the pixel at the exact center: above 0.30, the icon is drawn in its own colors; otherwise the icon is treated as an alpha mask, so only its silhouette is kept and drawn in the interface color.
+
+Your icon should therefore meet these conditions:
+
+- Everything outside the artwork is fully transparent.
+- If the icon should keep its own colors, the center must contain an opaque, highly saturated block of color.
+- Icons are displayed at a small size on buttons, so keep the artwork flat and avoid gradients and shadows.
+
+# Manifest configuration
+
+We recommend pointing to the icon in `mnaddon.json` with the `icon` field:
+
+```json mnaddon.json highlight={8} focus={8}
+{
+  "addonid": "mn.hello",
+  "title": "Hello World",
+  "version": "0.1.0",
+  "author": "Me",
+  "marginnote_version_min": "4.5.0",
+  "panel": "index.html",
+  "icon": "hello.png",
+  "events": ["excerpt", "comments"]
+}
+```
+
+MN resolves the icon in the following order:
+
+1. Use the icon configured in the `icon` field.
+2. If `icon` is missing or invalid, use a PNG file named after the last segment of `addonid`. For example, `addonid` of `mn.hello` resolves to `hello.png`.
+3. If that also fails, use the only PNG file in the add-on package.
+
+If none of these steps succeeds, the add-on has no icon.
+
+<Note>
+  The `icon` value is resolved relative to the root of the add-on package. If the path contains `..` or is absolute, MN refuses to import the package.
+</Note>

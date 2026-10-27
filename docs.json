@@ -111,9 +111,34 @@
         "pages": [
           {
             "group": "Getting Started",
+            "icon": "flag-pennant",
             "pages": [
               "en/introduction",
-              "en/quickstart"
+              "en/ai-dev"
+            ]
+          },
+          {
+            "group": "Basics",
+            "icon": "mug-hot",
+            "pages": [
+              "en/plugin-base",
+              "en/mnrails",
+              "en/sdk",
+              "en/logo",
+              "en/ui",
+              "en/data-interact",
+              "en/events"
+            ]
+          },
+          {
+            "group": "Advanced add-on development",
+            "icon": "plug",
+            "pages": [
+              "en/network",
+              "en/paths",
+              "en/menu-commands",
+              "en/use-inner-ai",
+              "en/jsaddon"
             ]
           }
         ]

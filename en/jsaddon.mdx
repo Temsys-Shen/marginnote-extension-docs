@@ -1,0 +1,240 @@
+---
+title: "Beyond the panel"
+---
+
+Besides building a standard scene add-on with a web stack, you can add a `main.js` at the add-on root and develop in a hybrid of scene add-on and classic add-on styles.
+
+Develop this way when you need to, for example:
+
+- Access MN's native objects
+- Register lifecycle methods
+- Adjust panel properties
+- Persist data, such as add-on settings
+- Use native capabilities that the web environment does not provide, through JSB
+
+`main.js` runs in the add-on's JavaScriptCore environment and calls the native objects exposed by MN through JSB.
+
+# File structure
+
+The minimal structure is:
+
+<Tree>
+  <Tree.Folder name="project" defaultOpen>
+    <Tree.File name="mnaddon.json" />
+    <Tree.File name="index.html" />
+    <Tree.File name="main.js" />
+  </Tree.Folder>
+</Tree>
+
+`mnaddon.json` still uses `panel` to specify the HTML panel entry:
+
+```json mnaddon.json highlight={8}
+{
+  "addonid": "mn.hello",
+  "title": "Example Add-on",
+  "version": "0.1.0",
+  "author": "Add-on Author",
+  "marginnote_version_min": "4.5.0",
+  "immersiveOnly": true,
+  "panel": "index.html"
+}
+```
+
+`main.js` must live at the add-on root. When MN loads the add-on it executes this file **immediately** and calls `JSB.newAddon(mainPath)` on it. That function must return a class that extends `JSExtension`.
+
+# Add-on entry
+
+Once `main.js` is present, it becomes the add-on entry. Here is the classic pattern:
+
+```javascript main.js
+JSB.newAddon = function (mainPath) { // add-on entry; mainPath is the add-on package root
+  var AddonClass = JSB.defineClass(
+    "HelloAddon : JSExtension", // add-on name : JSExtension
+    {
+      sceneWillConnect: function () {}, // fires just before the add-on becomes active
+      notebookWillOpen: function (topicid) {}, // fires when a study set opens
+      notebookWillClose: function (topicid) {} // fires when a study set closes
+      // add more instance members...
+    },
+    {
+      addonDidConnect: function () {},
+      addonWillDisconnect: function () {},
+      // add more class members...
+    }
+  );
+
+  return AddonClass;
+};
+```
+
+<Note>
+  Inside instance members defined by `JSB.defineClass`, use `self` rather than `this` to reference the instance of the JSB-defined class (such as `JSExtension`). For the available members of JSB-defined classes, see [Using MN native objects](#using-mn-native-objects).
+</Note>
+
+# Controlling the panel manually
+
+Once `main.js` is present, clicking the add-on button **no longer** opens the panel automatically. Creating, loading, showing, and cleaning up the panel are all up to your add-on.
+
+The function below opens a panel and sets its maximum height.
+
+```javascript main.js
+const openPanel = (context) => {
+  const panel = AddonWebPanel.panel();
+  panel.maxContentHeight = 760;
+
+  panel.loadPanel();
+  panel.showFloatingIn(Application.sharedInstance().studyController(context.window));
+
+  return panel;
+};
+```
+
+Note that showing the panel requires a `studyController` instance, and that instance has to come from the add-on instance. That is why the `context` argument must be `self` when you call this function from an instance member of the JSB-defined class.
+
+# Two-way communication
+
+## Calling main.js from the panel
+
+When the panel calls `mn.call(name, payload)`, it triggers `panel.onMessage(name, payload)` in `main.js`.
+
+The return value of `onMessage` is serialized and returned to the page as the result of `mn.call()`.
+
+Example:
+
+```javascript main.js
+const bindPanelMessage = (panel, context) => {
+  panel.onMessage = (name, payload) => {
+    if (name === "showMessage") {
+      Application.sharedInstance().showHUD(payload.text, context.window, 2);
+      return { ok: true };
+    }
+
+    return {};
+  };
+};
+```
+
+And the matching panel code:
+
+```html index.html
+<button id="send">Send to main.js</button>
+<pre id="out"></pre>
+
+<script>
+  const out = document.getElementById("out");
+
+  document.getElementById("send").onclick = async function () {
+    const result = await mn.call("showMessage", { text: "From the HTML panel" });
+    out.textContent = JSON.stringify(result, null, 2);
+  };
+</script>
+```
+
+The Promise returned by `mn.call` settles in one of two ways:
+
+- It resolves on a normal return, and also on `ADDON_CALL_FAILED` and `ADDON_BAD_RESULT`.
+- It rejects on `ADDON_THREW`, for example when `JSON.stringify` fails.
+
+## Calling the panel from main.js
+
+`main.js` can send events to a loaded panel with `panel.post(event, data)`. The panel receives them through `window.addEventListener("mn:<event>", handler)` and reads the data from `event.detail`.
+
+Example:
+
+```javascript main.js
+const sendStatusToPanel = (panel, message) => {
+  panel.post("status", {
+    message: `Message from main.js: ${message}`
+  });
+};
+```
+
+And the matching panel code:
+
+```html index.html
+<pre id="status"></pre>
+
+<script>
+  window.addEventListener("mn:status", function (event) {
+    document.getElementById("status").textContent =
+      JSON.stringify(event.detail, null, 2);
+  });
+</script>
+```
+
+<Tip>
+  If `post()` is called before the page finishes loading, events are buffered and delivered once the page is ready.
+</Tip>
+
+# Using MN native objects
+
+`main.js` can access the native objects exposed by JSB, including `Application`, `Database`, `NSFileManager`, `NSUserDefaults`, `NSTimer`, `UIColor`, `UIViewController`, and others.
+
+For example:
+
+```javascript
+// inside an instance member of the JSB-defined class
+const app = Application.sharedInstance();
+const studyController = app.studyController(self.window);
+const database = Database.sharedInstance();
+```
+
+For the full list of objects, properties, and methods, see the [MarginNote add-on development documentation](https://mn-docs.museday.top).
+
+# Common panel methods
+
+## Creating and loading
+
+### `AddonWebPanel.panel()`
+
+Creates a new panel object.
+
+### `panel.loadPanel()`
+
+Loads the HTML file inside the package according to the `panel` field of `mnaddon.json`. It returns `false` when the file is missing, when `panel` is not declared, or when the path escapes the package. This is the recommended way to load a panel.
+
+### `panel.loadHTML(html)`
+
+Loads an HTML string directly as the panel source.
+
+## Two-way communication
+
+### `panel.onMessage = function (name, payload) { ... }`
+
+The entry point for `mn.call(name, payload)` from the panel.
+
+### `panel.post(event, data)`
+
+Sends an event from `main.js` to the panel page, using the `mn:<event>` naming convention.
+
+## Media data
+
+### `panel.putMedia(key, data, type)`
+
+Stores media data on the panel. The panel can retrieve it from `/media/<key>`. When `data` is empty, the stored data and key are deleted.
+
+- `type`: the MIME type, such as `'image/jpeg'`.
+
+### `panel.clearMedia()`
+
+Clears the current panel's media cache. Large media should be passed through the media cache rather than embedded in JSON or `post()` data.
+
+## Showing and hiding
+
+### `panel.showFloatingIn(studyController)`
+
+Shows the panel as a persistent floating layer inside the study set controller. If the panel is already visible, calling this again brings it to the front and refreshes the layout.
+
+### `panel.showFloatingInMode(studyController, mode)`
+
+Shows the panel in the given mode. `mode` accepts `"mini"` or `"workspace"`.
+
+### `panel.hideFloating()`
+
+Collapses the floating layer and triggers panel cleanup. Prefer this method when your add-on closes the panel itself.
+
+## Resource cleanup
+
+### `panel.teardown()`
+
+Explicitly breaks the references between the panel, the WebView, callbacks, and pending requests so that an old panel does not keep resources alive. `hideFloating()` performs this cleanup as well. If your add-on closes the panel through some other presentation mechanism, call `teardown()` yourself.

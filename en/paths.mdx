@@ -1,0 +1,94 @@
+---
+title: "Path system"
+description: "How the panel reads packaged files, calls endpoints, loads media, and controls the UI through paths"
+---
+
+As described in [Data exchange](/en/data-interact), the panel exchanges data with MN through `mn.api`, which in turn behaves like `fetch` against `/bridge/v1/`. Every other interaction with MN works the same way: through the path system.
+
+# Path overview
+
+| Path | Method | Purpose | Failure response |
+| --- | --- | --- | --- |
+| `/`, `/index.html` | GET | The panel's page file | `500 PANEL_FILE_MISSING` |
+| `/bridge/v1/…` | GET \| POST | MarginNote API endpoints | `403 IN_PROCESS_NOT_ALLOWED` |
+| `/addon/<name>` | POST | Calls a method defined in `main.js` | `500 ADDON_CALL_FAILED`, `500 ADDON_BAD_RESULT`, `500 ADDON_THREW` |
+| `/media/<key>` | GET | Returns raw bytes stored by `putMedia` | `404 NO_MEDIA` |
+| `/ai/run-task` | POST | Runs an AI task declared by the template | `403 ADDON_NOT_ACTIVE`, `501 AI_UNAVAILABLE`, `500 AI_BAD_RESULT` |
+| `/pkg/<path>` | GET | **Returns a file from the add-on package** | `404 NO_PKG_FILE` |
+| `/ui/*` | GET | Controls panel size, mode, and position | `{"ok":true}` |
+| Anything else | — | — | `404 NOT_FOUND` |
+
+# `window.mn` methods and their paths
+
+| Call | Path |
+| --- | --- |
+| `mn.api(path, opts)` | `/bridge/v1` + `path` |
+| `mn.call(name, data)` | `/addon/<name>` |
+| `mn.ai(noteid, taskId, params)` | `/ai/run-task` |
+| `mn.height`, `mn.size`, `mn.mode`, `mn.close`, `mn.reload` | The matching path under `/ui/` |
+| `mn.log(...)` | `/ui/log?level=log` |
+
+# Using files from the add-on package
+
+Use `/pkg/` to reference files relative to the add-on package root, such as asset data, CSS, and images.
+
+Given this add-on directory:
+
+<Tree>
+  <Tree.Folder name="mn-addon">
+    <Tree.Folder name="assets" defaultOpen>
+      <Tree.File name="style.css" />
+    </Tree.Folder>
+    <Tree.Folder name="scripts" defaultOpen>
+      <Tree.File name="model.js" />
+    </Tree.Folder>
+    <Tree.File name="index.html" />
+    <Tree.File name="mnaddon.json" />
+  </Tree.Folder>
+</Tree>
+
+You can reference files like this:
+
+```html
+<link rel="stylesheet" href="/pkg/assets/style.css" />
+<script src="/pkg/scripts/model.js"></script>
+```
+
+<Warning>
+  `..`, absolute paths, and paths outside the package are not allowed.
+</Warning>
+
+# Media
+
+After you hand media data to the panel with `putMedia` (see [Beyond the panel › Media data](/en/jsaddon#media-data)), the panel can retrieve the raw bytes of that media from `/media/<key>`.
+
+# Calling methods defined in `main.js`
+
+`mn.call(name, data)` is equivalent to:
+
+- `POST /addon/<name>`
+- Request body: `data` (JSON)
+
+See [Beyond the panel](/en/jsaddon).
+
+# Running AI tasks
+
+`mn.ai(noteid, taskId, params)` is equivalent to:
+
+- `POST /ai/run-task`
+- Request body: `{noteid, taskId, params}`
+
+See [Using MN's built-in AI](/en/use-inner-ai).
+
+# UI control
+
+| Path | Equivalent call |
+| --- | --- |
+| `/ui/height?h=<h>` | `mn.height(h)` |
+| `/ui/size?w=<w>&h=<h>` | `mn.size(w, h)` |
+| `/ui/mode?m=<mode>` | `mn.mode('workspace' \| 'mini')` |
+| `/ui/move?dx=<dx>&dy=<dy>&phase=<begin\|end>` | — |
+| `/ui/close` | `mn.close()` |
+| `/ui/reload` | `mn.reload()` |
+
+See [Controlling the UI](/en/ui).

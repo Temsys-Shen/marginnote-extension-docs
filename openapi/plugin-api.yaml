@@ -1448,7 +1448,7 @@ paths:
         响应可能包含不同 Agent 的安装建议。不要把响应里的本机目录路径显示给最终用户。
       responses:
         '200':
-          description: helper skill 信息。结构会随宿主版本扩展。
+          description: helper skill 的内容。较新的 MarginNote 版本可能增加字段。
           content:
             application/json:
               schema:
@@ -3507,8 +3507,8 @@ paths:
         - `{ "ownerNoteId": "...", "commentId": "..." }`：按实际归属卡片与稳定批注身份定位。
 
         较早的批注可能没有 `commentId`，读取时返回 `null`。这类批注首次修改建议用 `index` 定位。
-        引用卡显示原卡共享批注时，应在当前显示用的卡片 `noteid` 上调用本接口；宿主会把共享批注写回
-        实际 `ownerNoteId`。
+        引用卡会显示原卡的共享批注。修改这类批注时，应以当前显示的卡片 `noteid` 调用本接口。
+        MarginNote 收到请求后，会把改动写回批注实际归属的卡片 `ownerNoteId`。
       parameters:
         - $ref: '#/components/parameters/Noteid'
       responses:
@@ -4434,8 +4434,8 @@ paths:
       summary: 获取 Anki 导出能力
       operationId: getAnkiCapabilities
       description: |
-        返回 Anki 导出相关的格式、上限、作业与上传路由。具体 request/response 字段随宿主版本扩展，
-        调用前应优先读取该接口。
+        返回 Anki 导出相关的格式、上限、作业与上传路由。字段集合随 MarginNote 版本增减，
+        调用前应先读取该接口，以实际返回的字段为准。
       responses:
         '200':
           description: Anki 导出能力清单。结构与 `GET /capabilities` 中的 ankiExport 分组同形。
@@ -6464,8 +6464,8 @@ paths:
 
         主数据上下文还有没保存的改动时会被拒，这是写入接口里唯一表示稍后重试的错误码。
 
-        尝试记录由独立的练习插件保管，宿主另有一条判据，只允许该插件查看自己的尝试。
-        命令行发起的调用不受该判据约束，本机实测可以取到预览。
+        尝试记录由独立的练习插件保管。从面板发起调用时，只有该练习插件可以查看这些记录。
+        从命令行发起调用时没有这一限制，可以直接取得预览。
       responses:
         '200':
           description: 预览。
@@ -7418,9 +7418,9 @@ paths:
 
         节点是扁平数组，父子关系靠每一项的 `parent` 自行组合，没有嵌套的下层数组。
 
-        要按文档顺序排列时带 `sort=document`。不要自行按页码排序：摘录与摘题产出的卡自身没有
-        页码，页码在该题的摘录子笔记上。带该参数时由 MarginNote 排序，判据与界面上的按页码排序逐字一致，
-        并给每个节点补上 `docPage` 与 `docBookmd5`。排序在切片之前对整条序列做，跨页顺序因此是对的。
+        要按文档顺序排列时带 `sort=document`。不要自行按页码排序：摘录与摘题产出的卡片没有页码，
+        页码记在该题的摘录子笔记上。带该参数时由 MarginNote 排序，结果与界面上按页码排序一致，
+        每个节点还会补上 `docPage` 与 `docBookmd5`。排序在切片之前对完整序列执行，跨页顺序因此正确。
 
         翻页用 `limit` 与 `cursor`，响应里的 `nextCursor` 为 `null` 表示已到末尾。
         达到遍历上限时 `walkLimitReached` 为真，为真时才表示读到末页也取不全。
@@ -9328,7 +9328,7 @@ paths:
         - $ref: '#/components/parameters/ExportPlanId'
       responses:
         '200':
-          description: 导出计划状态。结构会随宿主版本扩展。
+          description: 导出计划的状态。较新的 MarginNote 版本可能增加字段。
           content:
             application/json:
               schema:
@@ -13005,13 +13005,13 @@ components:
           description: 版本号，同 `annotation-editor`。
         practice:
           type: object
-          description: 判定的归属与所在学习集。只含 `addon` 与 `topic` 两项。
+          description: 判定所属的插件与所在学习集，字段为 `addon` 与 `topic`。
           required:
             - topic
           properties:
             addon:
               type: string
-              description: 判定的归属插件，取值是场景模板里为该场景配置的插件 id。面板发起的调用由宿主注入，命令行发起的调用须自行写入，缺少该字段时返回 `INVALID_INPUT`。
+              description: 判定所属的插件，取值是场景模板为该项配置的插件 id。从面板发起调用时，MarginNote 会填入该字段；从命令行发起调用时须自行写入。缺少该字段时返回 `INVALID_INPUT`。
             topic:
               type: string
               description: 这道题所在的学习集。
@@ -13318,7 +13318,7 @@ components:
           description: 只约束外部 Agent。面板跳过该项。
     CapabilitiesResponse:
       type: object
-      description: 路由清单与各项上限。字段比此处列出的多，另有若干按主题分组的对象，分别说明标签操作、元数据级别、手写会话、同步诊断各自的上限与语义。
+      description: 路由清单与各项上限。此处未列出的字段，见按主题分组的其他对象：标签操作、元数据级别、手写会话与同步诊断各自的上限与语义。
       properties:
         bridgeApiVersion:
           type: string
@@ -13654,8 +13654,8 @@ components:
         reference:
           type: object
           description: |
-            该卡与来源保持同步。取值是一个对象，判据在该对象的 `isReference` 上。较早的 MarginNote
-            在该项上直接给 `1` 与 `0`，因此按真值判断。
+            该卡与来源保持同步。取值是一个对象，其中 `isReference` 表示是否同步。较早的 MarginNote
+            版本直接返回 `1` 或 `0`，因此按真值判断即可。
           properties:
             isReference:
               type: [boolean, integer]
@@ -13757,7 +13757,7 @@ components:
           type: string
         page:
           type: [number, "null"]
-          description: 页码。以块为单位导入的卡，该项恒为 `null`，因此不要将该字段当作摘录卡的判据。
+          description: 页码。以块为单位导入的卡，该字段恒为 `null`。判断一张卡是否为摘录卡时，不要依据该字段。
     CommentItem:
       type: object
       properties:
@@ -14399,7 +14399,7 @@ components:
       properties:
         windowId:
           type: string
-          description: 可选。面板调用时通常由宿主按当前窗口补齐。
+          description: 可选。从面板发起调用时，MarginNote 会按当前窗口自动填入。
         expectedTopicId:
           type: string
           description: 可选。用于确认当前窗口仍在预期学习集。
@@ -14572,7 +14572,7 @@ components:
           description: base64 编码的预览图。有尺寸上限，超出上限时该字段不返回。
         bridgeApiVersion:
           type: string
-          description: 宿主的接口版本。
+          description: 生成该响应时使用的 Bridge 接口版本。
     SkillResponse:
       type: object
       description: 本机 helper skill 内容与刷新入口。
