@@ -93,6 +93,12 @@ Note that showing the panel requires a `studyController` instance, and that inst
 
 # Two-way communication
 
+The panel and `main.js` can call each other and pass data in both directions.
+
+<Warning>
+  Data passed in either direction must be serializable with `JSON.stringify`.
+</Warning>
+
 ## Calling main.js from the panel
 
 When the panel calls `mn.call(name, payload)`, it triggers `panel.onMessage(name, payload)` in `main.js`.
@@ -132,8 +138,8 @@ And the matching panel code:
 
 The Promise returned by `mn.call` settles in one of two ways:
 
-- It resolves on a normal return, and also on `ADDON_CALL_FAILED` and `ADDON_BAD_RESULT`.
-- It rejects on `ADDON_THREW`, for example when `JSON.stringify` fails.
+- It resolves on a normal return, on `ADDON_CALL_FAILED`, and on `ADDON_BAD_RESULT`.
+- It rejects on `ADDON_THREW`.
 
 ## Calling the panel from main.js
 

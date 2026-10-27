@@ -12,7 +12,6 @@ title: "面板之外"
 - 持久化存储（如插件设置）
 - 通过 JSB 使用网页环境未提供的原生能力
 
-
 `main.js` 运行在插件的 JavaScriptCore 环境里，通过 JSB 调用 MN 暴露的原生对象。
 
 # 文件结构
@@ -94,6 +93,12 @@ const openPanel = (context) => {
 
 # 双向通信
 
+插件面板与`main.js`之间可以相互调用并传递数据。
+
+<Warning>
+  传递的数据必须是可JSON.stringify的
+</Warning>
+
 ## 从面板调用 main.js
 
 面板调用 `mn.call(name, payload)` 时会触发 `main.js`的 `panel.onMessage(name, payload)`。
@@ -133,8 +138,8 @@ const bindPanelMessage = (panel, context) => {
 
 `mn.call`返回 Promise 的两种情况：
 
-- resolve：正常返回、`ADDON_CALL_FAILED`、`ADDON_BAD_RESULT` 
-- reject：`ADDON_THREW` （如`JSON.stringify` 失败）
+- resolve：正常返回、`ADDON_CALL_FAILED`、`ADDON_BAD_RESULT`
+- reject：`ADDON_THREW`
 
 ## 从 main.js 调用面板
 
