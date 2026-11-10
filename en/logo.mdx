@@ -6,13 +6,33 @@ title: "Setting an add-on icon"
 
 The icon must be a PNG image. 64×64 is the recommended size, though you can use a larger or smaller image if your design needs it.
 
-When MN draws the icon, it samples the saturation of the pixel at the exact center: above 0.30, the icon is drawn in its own colors; otherwise the icon is treated as an alpha mask, so only its silhouette is kept and drawn in the interface color.
+When MN draws the icon, it treats the image as an alpha mask: only the silhouette is kept and drawn in a single color using the interface color. Everything outside the artwork must therefore be fully transparent.
 
-Your icon should therefore meet these conditions:
+# Style guide
 
-- Everything outside the artwork is fully transparent.
-- If the icon should keep its own colors, the center must contain an opaque, highly saturated block of color.
-- Icons are displayed at a small size on buttons, so keep the artwork flat and avoid gradients and shadows.
+### 1. Focus on the core silhouette
+
+Monochrome rendering conveys meaning entirely through the outer contour. Distill the most recognizable features of the subject and drop decorative detail that carries no meaning. At small sizes, complex lines tend to merge and lose their shape, so the clearer and simpler the silhouette, the more legible the icon.
+
+### 2. Compose with negative space
+
+Because multiple color layers are not supported, depth, detail, and separation inside the icon must come from transparent negative space (cut-outs). Keep the gaps between cut-outs wide enough (at least 2 pixels is recommended) so anti-aliasing does not close them at small sizes.
+
+### 3. Avoid translucency and blur
+
+Keep the artwork at 100% opacity. The alpha channel does support partial transparency, but low-opacity pixels blend with the interface foreground and end up looking faint or muddy. Only crisp, hard edges stay sharp and clear on every background.
+
+### 4. Balance visual weight
+
+Center the icon on a 64×64 pixel canvas and keep its visual weight consistent:
+
+- **Padding**: leave a 4–6 pixel safe margin around the canvas so the artwork does not feel cramped.
+- **Optical alignment**: for asymmetric shapes, align to the visual center rather than the geometric center. Pull square icons in slightly, and let elongated or circular icons extend a little, so that icons placed side by side read as the same size.
+
+### 5. Standardize strokes and corners
+
+- **Stroke width**: keep strokes and lines between 3 and 5 pixels, and avoid lines thinner than 3 pixels.
+- **Corners**: use slightly rounded line ends and corners so the icon feels smooth and modern and matches the native interface conventions.
 
 # Manifest configuration
 
