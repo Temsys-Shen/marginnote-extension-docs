@@ -1,0 +1,12 @@
+{
+  "name": "marginnote-extension-docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "docs:jsb": "for f in types/jsb/*.d.ts; do n=${f##*/}; typedoc --options types/jsb/typedoc.json --entryPoints $f --json sdk/${n%.d.ts}.json; done"
+  },
+  "devDependencies": {
+    "typedoc": "0.28.19",
+    "typescript": "5.9.3"
+  }
+}

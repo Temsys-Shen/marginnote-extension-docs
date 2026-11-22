@@ -1,0 +1,1381 @@
+{
+	"schemaVersion": "2.0",
+	"id": 0,
+	"name": "marginnote-extension-docs",
+	"variant": "project",
+	"kind": 1,
+	"flags": {},
+	"children": [
+		{
+			"id": 8,
+			"name": "NativeClass",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Opaque native class object. Does not imply "
+					},
+					{
+						"kind": "code",
+						"text": "`new NativeClass()`"
+					},
+					{
+						"kind": "text",
+						"text": "."
+					}
+				]
+			},
+			"children": [
+				{
+					"id": 10,
+					"name": "__instanceType",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {
+						"isOptional": true,
+						"isReadonly": true
+					},
+					"type": {
+						"type": "reference",
+						"target": 9,
+						"name": "T",
+						"package": "marginnote-extension-docs",
+						"qualifiedName": "NativeClass.T",
+						"refersToTypeParameter": true
+					}
+				}
+			],
+			"groups": [
+				{
+					"title": "Properties",
+					"children": [
+						10
+					]
+				}
+			],
+			"typeParameters": [
+				{
+					"id": 9,
+					"name": "T",
+					"variant": "typeParam",
+					"kind": 131072,
+					"flags": {}
+				}
+			]
+		},
+		{
+			"id": 7,
+			"name": "NativeObject",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native object, not a declaration of a global NSObject constructor."
+					}
+				]
+			}
+		},
+		{
+			"id": 1,
+			"name": "NativeOpaque",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "An unresolved native value. Narrow only after checking its documented bridge representation."
+					}
+				]
+			},
+			"children": [
+				{
+					"id": 3,
+					"name": "__nativeType",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {
+						"isReadonly": true
+					},
+					"type": {
+						"type": "reference",
+						"target": 2,
+						"name": "Name",
+						"package": "marginnote-extension-docs",
+						"qualifiedName": "NativeOpaque.Name",
+						"refersToTypeParameter": true
+					}
+				}
+			],
+			"groups": [
+				{
+					"title": "Properties",
+					"children": [
+						3
+					]
+				}
+			],
+			"typeParameters": [
+				{
+					"id": 2,
+					"name": "Name",
+					"variant": "typeParam",
+					"kind": 131072,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "string"
+					}
+				}
+			]
+		},
+		{
+			"id": 11,
+			"name": "CIColor",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "CIColor"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 12,
+			"name": "CMTime",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "CMTime"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 13,
+			"name": "CMTimeMapping",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "CMTimeMapping"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 14,
+			"name": "CMTimeRange",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "CMTimeRange"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 15,
+			"name": "IMP",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "IMP"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 6,
+			"name": "NativeBlock",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native block whose JavaScript calling convention has not been reviewed."
+					}
+				]
+			},
+			"type": {
+				"type": "intrinsic",
+				"name": "unknown"
+			}
+		},
+		{
+			"id": 4,
+			"name": "NativePointer",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "An Objective-C pointer, not a JavaScript number."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "pointer"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 5,
+			"name": "NativeSelector",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "A native selector returned by JSB.selector()."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "selector"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 16,
+			"name": "NSBundle",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSBundle"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 17,
+			"name": "NSCachedURLResponse",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSCachedURLResponse"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 18,
+			"name": "NSCalendar",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSCalendar"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 19,
+			"name": "NSCoder",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSCoder"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 20,
+			"name": "NSComparator",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSComparator"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 21,
+			"name": "NSFileWrapper",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSFileWrapper"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 22,
+			"name": "NSInputStream",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSInputStream"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 23,
+			"name": "NSInvocation",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSInvocation"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 24,
+			"name": "NSLayoutManager",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSLayoutManager"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 25,
+			"name": "NSMethodSignature",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSMethodSignature"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 26,
+			"name": "NSOrthography",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSOrthography"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 27,
+			"name": "NSPointerFunctions",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSPointerFunctions"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 28,
+			"name": "NSRangePointer",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSRangePointer"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 29,
+			"name": "NSRunLoop",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSRunLoop"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 30,
+			"name": "NSStringDrawingContext",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSStringDrawingContext"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 31,
+			"name": "NSTextAttachment",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSTextAttachment"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 32,
+			"name": "NSTextContainer",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSTextContainer"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 35,
+			"name": "NSUndoManager",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSUndoManager"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 33,
+			"name": "NSURLAuthenticationChallenge",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSURLAuthenticationChallenge"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 34,
+			"name": "NSURLProtectionSpace",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSURLProtectionSpace"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 36,
+			"name": "NSZone",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "NSZone"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 37,
+			"name": "Protocol",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "Protocol"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 38,
+			"name": "SKNode",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "SKNode"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 39,
+			"name": "SKPhysicsBody",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "SKPhysicsBody"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 40,
+			"name": "SKScene",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "SKScene"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 41,
+			"name": "UISearchDisplayController",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "UISearchDisplayController"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 42,
+			"name": "uuid_t",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "uuid_t"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		},
+		{
+			"id": 43,
+			"name": "va_list",
+			"variant": "declaration",
+			"kind": 2097152,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "Native type with no reviewed JS representation."
+					}
+				]
+			},
+			"type": {
+				"type": "reference",
+				"target": 1,
+				"typeArguments": [
+					{
+						"type": "literal",
+						"value": "va_list"
+					}
+				],
+				"name": "NativeOpaque",
+				"package": "marginnote-extension-docs"
+			}
+		}
+	],
+	"groups": [
+		{
+			"title": "Interfaces",
+			"children": [
+				8,
+				7,
+				1
+			]
+		},
+		{
+			"title": "Type Aliases",
+			"children": [
+				11,
+				12,
+				13,
+				14,
+				15,
+				6,
+				4,
+				5,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				35,
+				33,
+				34,
+				36,
+				37,
+				38,
+				39,
+				40,
+				41,
+				42,
+				43
+			]
+		}
+	],
+	"packageName": "marginnote-extension-docs",
+	"symbolIdMap": {
+		"1": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NativeOpaque"
+		},
+		"2": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NativeOpaque.Name"
+		},
+		"3": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NativeOpaque.__nativeType"
+		},
+		"4": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NativePointer"
+		},
+		"5": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NativeSelector"
+		},
+		"6": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NativeBlock"
+		},
+		"7": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NativeObject"
+		},
+		"8": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NativeClass"
+		},
+		"9": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NativeClass.T"
+		},
+		"10": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NativeClass.__instanceType"
+		},
+		"11": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "CIColor"
+		},
+		"12": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "CMTime"
+		},
+		"13": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "CMTimeMapping"
+		},
+		"14": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "CMTimeRange"
+		},
+		"15": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "IMP"
+		},
+		"16": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSBundle"
+		},
+		"17": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSCachedURLResponse"
+		},
+		"18": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSCalendar"
+		},
+		"19": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSCoder"
+		},
+		"20": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSComparator"
+		},
+		"21": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSFileWrapper"
+		},
+		"22": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSInputStream"
+		},
+		"23": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSInvocation"
+		},
+		"24": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSLayoutManager"
+		},
+		"25": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSMethodSignature"
+		},
+		"26": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSOrthography"
+		},
+		"27": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSPointerFunctions"
+		},
+		"28": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSRangePointer"
+		},
+		"29": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSRunLoop"
+		},
+		"30": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSStringDrawingContext"
+		},
+		"31": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSTextAttachment"
+		},
+		"32": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSTextContainer"
+		},
+		"33": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSURLAuthenticationChallenge"
+		},
+		"34": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSURLProtectionSpace"
+		},
+		"35": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSUndoManager"
+		},
+		"36": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "NSZone"
+		},
+		"37": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "Protocol"
+		},
+		"38": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "SKNode"
+		},
+		"39": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "SKPhysicsBody"
+		},
+		"40": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "SKScene"
+		},
+		"41": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "UISearchDisplayController"
+		},
+		"42": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "uuid_t"
+		},
+		"43": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/native-types.d.ts",
+			"qualifiedName": "va_list"
+		}
+	},
+	"files": {
+		"entries": {
+			"1": "types/jsb/native-types.d.ts"
+		},
+		"reflections": {
+			"1": 0
+		}
+	}
+}

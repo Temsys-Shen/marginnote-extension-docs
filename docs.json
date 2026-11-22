@@ -86,6 +86,76 @@
             "pages": [
               "zh/api-ai-warning"
             ]
+          },
+          {
+            "group": "JSB API 参考",
+            "icon": "code",
+            "pages": [
+              {
+                "group": "全局与入口",
+                "sdk": {
+                  "format": "typedoc",
+                  "source": "sdk/global-entry.json",
+                  "directory": "jsb-api/global-entry"
+                }
+              },
+              {
+                "group": "MarginNote核心",
+                "sdk": {
+                  "format": "typedoc",
+                  "source": "sdk/marginnote-core.json",
+                  "directory": "jsb-api/marginnote-core"
+                }
+              },
+              {
+                "group": "Foundation",
+                "sdk": {
+                  "format": "typedoc",
+                  "source": "sdk/foundation.json",
+                  "directory": "jsb-api/foundation"
+                }
+              },
+              {
+                "group": "UIKit",
+                "sdk": {
+                  "format": "typedoc",
+                  "source": "sdk/uikit.json",
+                  "directory": "jsb-api/uikit"
+                }
+              },
+              {
+                "group": "QuartzCore",
+                "sdk": {
+                  "format": "typedoc",
+                  "source": "sdk/quartzcore.json",
+                  "directory": "jsb-api/quartzcore"
+                }
+              },
+              {
+                "group": "Utility",
+                "sdk": {
+                  "format": "typedoc",
+                  "source": "sdk/utility.json",
+                  "directory": "jsb-api/utility"
+                }
+              },
+              {
+                "group": "Value Struct",
+                "sdk": {
+                  "format": "typedoc",
+                  "source": "sdk/value-struct.json",
+                  "directory": "jsb-api/value-struct"
+                }
+              },
+              {
+                "group": "Native types",
+                "sdk": {
+                  "format": "typedoc",
+                  "source": "sdk/native-types.json",
+                  "directory": "jsb-api/native-types"
+                }
+              }
+            ]
           }
         ],
         "default": true

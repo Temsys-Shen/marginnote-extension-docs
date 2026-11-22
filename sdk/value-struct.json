@@ -1,0 +1,884 @@
+{
+	"schemaVersion": "2.0",
+	"id": 0,
+	"name": "marginnote-extension-docs",
+	"variant": "project",
+	"kind": 1,
+	"flags": {},
+	"children": [
+		{
+			"id": 28,
+			"name": "CATransform3D",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "JavaScriptCore structural geometry conversion."
+					}
+				]
+			},
+			"children": [
+				{
+					"id": 29,
+					"name": "m11",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 30,
+					"name": "m12",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 31,
+					"name": "m13",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 32,
+					"name": "m14",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 33,
+					"name": "m21",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 34,
+					"name": "m22",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 35,
+					"name": "m23",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 36,
+					"name": "m24",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 37,
+					"name": "m31",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 38,
+					"name": "m32",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 39,
+					"name": "m33",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 40,
+					"name": "m34",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 41,
+					"name": "m41",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 42,
+					"name": "m42",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 43,
+					"name": "m43",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 44,
+					"name": "m44",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				}
+			],
+			"groups": [
+				{
+					"title": "Properties",
+					"children": [
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42,
+						43,
+						44
+					]
+				}
+			]
+		},
+		{
+			"id": 13,
+			"name": "CGAffineTransform",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "JavaScriptCore structural geometry conversion."
+					}
+				]
+			},
+			"children": [
+				{
+					"id": 14,
+					"name": "a",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 15,
+					"name": "b",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 16,
+					"name": "c",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 17,
+					"name": "d",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 18,
+					"name": "tx",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 19,
+					"name": "ty",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				}
+			],
+			"groups": [
+				{
+					"title": "Properties",
+					"children": [
+						14,
+						15,
+						16,
+						17,
+						18,
+						19
+					]
+				}
+			]
+		},
+		{
+			"id": 1,
+			"name": "CGPoint",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "JavaScriptCore structural geometry conversion."
+					}
+				]
+			},
+			"children": [
+				{
+					"id": 2,
+					"name": "x",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 3,
+					"name": "y",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				}
+			],
+			"groups": [
+				{
+					"title": "Properties",
+					"children": [
+						2,
+						3
+					]
+				}
+			]
+		},
+		{
+			"id": 7,
+			"name": "CGRect",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "JavaScriptCore structural geometry conversion."
+					}
+				]
+			},
+			"children": [
+				{
+					"id": 8,
+					"name": "origin",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "reference",
+						"target": 1,
+						"name": "CGPoint",
+						"package": "marginnote-extension-docs"
+					}
+				},
+				{
+					"id": 9,
+					"name": "size",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "reference",
+						"target": 4,
+						"name": "CGSize",
+						"package": "marginnote-extension-docs"
+					}
+				}
+			],
+			"groups": [
+				{
+					"title": "Properties",
+					"children": [
+						8,
+						9
+					]
+				}
+			]
+		},
+		{
+			"id": 4,
+			"name": "CGSize",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "JavaScriptCore structural geometry conversion."
+					}
+				]
+			},
+			"children": [
+				{
+					"id": 6,
+					"name": "height",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 5,
+					"name": "width",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				}
+			],
+			"groups": [
+				{
+					"title": "Properties",
+					"children": [
+						6,
+						5
+					]
+				}
+			]
+		},
+		{
+			"id": 10,
+			"name": "NSRange",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "JavaScriptCore structural geometry conversion."
+					}
+				]
+			},
+			"children": [
+				{
+					"id": 12,
+					"name": "length",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 11,
+					"name": "location",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				}
+			],
+			"groups": [
+				{
+					"title": "Properties",
+					"children": [
+						12,
+						11
+					]
+				}
+			]
+		},
+		{
+			"id": 20,
+			"name": "UIEdgeInsets",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "JavaScriptCore structural geometry conversion."
+					}
+				]
+			},
+			"children": [
+				{
+					"id": 23,
+					"name": "bottom",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 22,
+					"name": "left",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 24,
+					"name": "right",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 21,
+					"name": "top",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				}
+			],
+			"groups": [
+				{
+					"title": "Properties",
+					"children": [
+						23,
+						22,
+						24,
+						21
+					]
+				}
+			]
+		},
+		{
+			"id": 25,
+			"name": "UIOffset",
+			"variant": "declaration",
+			"kind": 256,
+			"flags": {},
+			"comment": {
+				"summary": [
+					{
+						"kind": "text",
+						"text": "JavaScriptCore structural geometry conversion."
+					}
+				]
+			},
+			"children": [
+				{
+					"id": 26,
+					"name": "horizontal",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				},
+				{
+					"id": 27,
+					"name": "vertical",
+					"variant": "declaration",
+					"kind": 1024,
+					"flags": {},
+					"type": {
+						"type": "intrinsic",
+						"name": "number"
+					}
+				}
+			],
+			"groups": [
+				{
+					"title": "Properties",
+					"children": [
+						26,
+						27
+					]
+				}
+			]
+		}
+	],
+	"groups": [
+		{
+			"title": "Interfaces",
+			"children": [
+				28,
+				13,
+				1,
+				7,
+				4,
+				10,
+				20,
+				25
+			]
+		}
+	],
+	"packageName": "marginnote-extension-docs",
+	"symbolIdMap": {
+		"1": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGPoint"
+		},
+		"2": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGPoint.x"
+		},
+		"3": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGPoint.y"
+		},
+		"4": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGSize"
+		},
+		"5": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGSize.width"
+		},
+		"6": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGSize.height"
+		},
+		"7": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGRect"
+		},
+		"8": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGRect.origin"
+		},
+		"9": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGRect.size"
+		},
+		"10": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "NSRange"
+		},
+		"11": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "NSRange.location"
+		},
+		"12": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "NSRange.length"
+		},
+		"13": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGAffineTransform"
+		},
+		"14": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGAffineTransform.a"
+		},
+		"15": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGAffineTransform.b"
+		},
+		"16": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGAffineTransform.c"
+		},
+		"17": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGAffineTransform.d"
+		},
+		"18": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGAffineTransform.tx"
+		},
+		"19": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CGAffineTransform.ty"
+		},
+		"20": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "UIEdgeInsets"
+		},
+		"21": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "UIEdgeInsets.top"
+		},
+		"22": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "UIEdgeInsets.left"
+		},
+		"23": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "UIEdgeInsets.bottom"
+		},
+		"24": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "UIEdgeInsets.right"
+		},
+		"25": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "UIOffset"
+		},
+		"26": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "UIOffset.horizontal"
+		},
+		"27": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "UIOffset.vertical"
+		},
+		"28": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D"
+		},
+		"29": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m11"
+		},
+		"30": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m12"
+		},
+		"31": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m13"
+		},
+		"32": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m14"
+		},
+		"33": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m21"
+		},
+		"34": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m22"
+		},
+		"35": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m23"
+		},
+		"36": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m24"
+		},
+		"37": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m31"
+		},
+		"38": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m32"
+		},
+		"39": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m33"
+		},
+		"40": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m34"
+		},
+		"41": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m41"
+		},
+		"42": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m42"
+		},
+		"43": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m43"
+		},
+		"44": {
+			"packageName": "marginnote-extension-docs",
+			"packagePath": "types/jsb/value-struct.d.ts",
+			"qualifiedName": "CATransform3D.m44"
+		}
+	},
+	"files": {
+		"entries": {
+			"1": "types/jsb/value-struct.d.ts"
+		},
+		"reflections": {
+			"1": 0
+		}
+	}
+}

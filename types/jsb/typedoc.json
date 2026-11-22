@@ -1,0 +1,9 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPointStrategy": "resolve",
+  "tsconfig": "tsconfig.json",
+  "readme": "none",
+  "disableSources": true,
+  "out": "/tmp/typedoc-jsb",
+  "validation": {"notExported": false, "invalidLink": false}
+}
